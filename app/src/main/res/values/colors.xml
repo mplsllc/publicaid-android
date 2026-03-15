@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="navy">#FF0A2F57</color>
+    <color name="navy_light">#FF1A4A7A</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="surface">#FFF8FAFC</color>
+</resources>
