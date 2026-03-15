@@ -103,6 +103,9 @@ dependencies {
     // Coroutines
     implementation(libs.coroutines.android)
 
+    // Security
+    implementation(libs.security.crypto)
+
     // Core
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)

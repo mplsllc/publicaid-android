@@ -4,16 +4,20 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.publicaid.app.ui.components.*
+import org.publicaid.app.ui.theme.LocalExtendedColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,6 +27,7 @@ fun SearchScreen(
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val colors = LocalExtendedColors.current
     var showFilters by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
@@ -66,24 +71,58 @@ fun SearchScreen(
                 .padding(padding),
         ) {
             // Active filter chips
-            if (state.filters != org.publicaid.app.ui.components.SearchFilters()) {
+            if (state.filters != SearchFilters()) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     state.filters.category?.let { cat ->
-                        InputChip(
-                            selected = true,
-                            onClick = { viewModel.updateFilters(state.filters.copy(category = null)) },
-                            label = { Text(cat) },
-                        )
+                        Surface(
+                            color = colors.tagBg,
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text(cat, style = MaterialTheme.typography.labelSmall, color = colors.brightBlue)
+                                IconButton(
+                                    onClick = { viewModel.updateFilters(state.filters.copy(category = null)) },
+                                    modifier = Modifier.size(20.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Remove",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = colors.brightBlue,
+                                    )
+                                }
+                            }
+                        }
                     }
                     state.filters.state?.let { st ->
-                        InputChip(
-                            selected = true,
-                            onClick = { viewModel.updateFilters(state.filters.copy(state = null)) },
-                            label = { Text(st) },
-                        )
+                        Surface(
+                            color = colors.tagBg,
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Text(st, style = MaterialTheme.typography.labelSmall, color = colors.brightBlue)
+                                IconButton(
+                                    onClick = { viewModel.updateFilters(state.filters.copy(state = null)) },
+                                    modifier = Modifier.size(20.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Remove",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = colors.brightBlue,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -92,8 +131,8 @@ fun SearchScreen(
             if (state.results.isNotEmpty()) {
                 Text(
                     text = "${state.total} results",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.grayText,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
@@ -126,7 +165,10 @@ fun SearchScreen(
                                         .padding(16.dp),
                                     contentAlignment = androidx.compose.ui.Alignment.Center,
                                 ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = colors.brightBlue,
+                                    )
                                 }
                             }
                         }

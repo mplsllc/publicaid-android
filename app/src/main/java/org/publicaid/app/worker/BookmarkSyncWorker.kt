@@ -8,13 +8,16 @@ import dagger.assisted.AssistedInject
 import org.publicaid.app.data.api.BatchRequest
 import org.publicaid.app.data.api.PublicaidApi
 import org.publicaid.app.data.db.BookmarkDao
+import org.publicaid.app.data.model.AuthState
+import org.publicaid.app.data.repository.AuthRepository
+import org.publicaid.app.data.repository.BookmarkRepository
 import org.publicaid.app.data.repository.EntityRepository
 import java.util.concurrent.TimeUnit
 
 /**
  * Refreshes cached entity data for all bookmarked entities.
+ * If logged in, also syncs bookmarks with the server.
  * Runs every 24 hours via WorkManager + on app foreground as fallback.
- * Constraints: requires network, does NOT require charging.
  */
 @HiltWorker
 class BookmarkSyncWorker @AssistedInject constructor(
@@ -23,9 +26,20 @@ class BookmarkSyncWorker @AssistedInject constructor(
     private val api: PublicaidApi,
     private val bookmarkDao: BookmarkDao,
     private val entityRepository: EntityRepository,
+    private val authRepository: AuthRepository,
+    private val bookmarkRepository: BookmarkRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        // If logged in, sync bookmarks with server first
+        if (authRepository.authState.value is AuthState.LoggedIn) {
+            try {
+                bookmarkRepository.syncOnLogin()
+            } catch (_: Exception) {
+                // Continue with local cache refresh even if server sync fails
+            }
+        }
+
         val entityIds = bookmarkDao.getAllEntityIds()
         if (entityIds.isEmpty()) return Result.success()
 
@@ -50,12 +64,12 @@ class BookmarkSyncWorker @AssistedInject constructor(
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .setRequiresBatteryNotLow(false)
-                .setRequiresCharging(false) // Users may not charge often
+                .setRequiresCharging(false)
                 .build()
 
             val request = PeriodicWorkRequestBuilder<BookmarkSyncWorker>(
                 24, TimeUnit.HOURS,
-                4, TimeUnit.HOURS, // flex interval
+                4, TimeUnit.HOURS,
             )
                 .setConstraints(constraints)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES)

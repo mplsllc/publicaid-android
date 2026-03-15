@@ -11,8 +11,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.publicaid.app.data.model.Category
+import org.publicaid.app.ui.theme.LocalExtendedColors
 
 data class SearchFilters(
     val state: String? = null,
@@ -33,6 +35,8 @@ fun FilterSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = LocalExtendedColors.current
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
@@ -51,39 +55,61 @@ fun FilterSheet(
 
             // Category chips
             if (categories.isNotEmpty()) {
-                Text("Category", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "Category",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.grayText,
+                )
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     categories.forEach { cat ->
+                        val selected = filters.category == cat.slug
                         FilterChip(
-                            selected = filters.category == cat.slug,
+                            selected = selected,
                             onClick = {
-                                val newCat = if (filters.category == cat.slug) null else cat.slug
+                                val newCat = if (selected) null else cat.slug
                                 onFiltersChanged(filters.copy(category = newCat))
                             },
                             label = { Text(cat.name) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = colors.brightBlue,
+                                selectedLabelColor = Color.White,
+                                containerColor = colors.tagBg,
+                                labelColor = colors.brightBlue,
+                            ),
                         )
                     }
                 }
             }
 
-            // State chips (top 10 most common)
+            // State chips (top 20 most common)
             if (states.isNotEmpty()) {
-                Text("State", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "State",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.grayText,
+                )
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     states.take(20).forEach { st ->
+                        val selected = filters.state == st
                         FilterChip(
-                            selected = filters.state == st,
+                            selected = selected,
                             onClick = {
-                                val newState = if (filters.state == st) null else st
+                                val newState = if (selected) null else st
                                 onFiltersChanged(filters.copy(state = newState))
                             },
                             label = { Text(st) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = colors.brightBlue,
+                                selectedLabelColor = Color.White,
+                                containerColor = colors.tagBg,
+                                labelColor = colors.brightBlue,
+                            ),
                         )
                     }
                 }

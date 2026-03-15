@@ -9,14 +9,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.publicaid.app.R
+import org.publicaid.app.ui.theme.LocalExtendedColors
 
 @Composable
 fun LoadingIndicator(modifier: Modifier = Modifier) {
+    val colors = LocalExtendedColors.current
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(color = colors.brightBlue)
     }
 }
 
@@ -26,6 +28,7 @@ fun ErrorState(
     onRetry: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val colors = LocalExtendedColors.current
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -37,11 +40,16 @@ fun ErrorState(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = colors.grayText,
         )
         if (onRetry != null) {
             Spacer(Modifier.height(16.dp))
-            OutlinedButton(onClick = onRetry) {
+            OutlinedButton(
+                onClick = onRetry,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colors.brightBlue,
+                ),
+            ) {
                 Text(stringResource(R.string.retry))
             }
         }
@@ -53,6 +61,7 @@ fun EmptyState(
     message: String = stringResource(R.string.no_results),
     modifier: Modifier = Modifier,
 ) {
+    val colors = LocalExtendedColors.current
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -63,7 +72,7 @@ fun EmptyState(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = colors.grayText,
         )
     }
 }
