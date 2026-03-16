@@ -103,7 +103,7 @@ class AltchaChallenge {
       algorithm: json['algorithm'] as String,
       challenge: json['challenge'] as String,
       salt: json['salt'] as String,
-      maxnumber: json['maxnumber'] as int,
+      maxnumber: (json['maxNumber'] ?? json['maxnumber']) as int,
       signature: json['signature'] as String,
     );
   }

@@ -37,6 +37,8 @@ class _DetailScreenState extends State<DetailScreen> {
     _loadData();
   }
 
+  int _retryCount = 0;
+
   Future<void> _loadData() async {
     setState(() {
       _loading = true;
@@ -56,13 +58,21 @@ class _DetailScreenState extends State<DetailScreen> {
           _services = results[1] as List<EntityService>;
           _hours = results[2] as List<EntityHours>;
           _loading = false;
+          _retryCount = 0;
         });
       }
     } catch (e) {
       debugPrint('DetailScreen error loading ${widget.entityId}: $e');
+      // Auto-retry up to 3 times with backoff
+      if (_retryCount < 3 && mounted) {
+        _retryCount++;
+        await Future.delayed(Duration(milliseconds: 500 * _retryCount));
+        if (mounted) _loadData();
+        return;
+      }
       if (mounted) {
         setState(() {
-          _error = 'Could not load details: $e';
+          _error = 'Could not load details. Tap to retry.';
           _loading = false;
         });
       }

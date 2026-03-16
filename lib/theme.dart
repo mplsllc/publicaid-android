@@ -95,6 +95,12 @@ ThemeData buildAppTheme() {
       backgroundColor: AppColors.navyBlue,
       foregroundColor: Colors.white,
       elevation: 0,
+      titleTextStyle: TextStyle(
+        fontFamily: 'DMSans',
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
     ),
     cardTheme: CardThemeData(
       color: Colors.white,

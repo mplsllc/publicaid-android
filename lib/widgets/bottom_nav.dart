@@ -15,11 +15,6 @@ class AppBottomNav extends StatelessWidget {
   static const _inactiveColor = Color(0xFF8BA8C8);
 
   void _handleTap(int index) {
-    if (index == 4) {
-      // Crisis — dial 988
-      launchUrl(Uri.parse('tel:988'));
-      return;
-    }
     onTap(index);
   }
 
@@ -62,8 +57,7 @@ class AppBottomNav extends StatelessWidget {
 
   Widget _buildTab(
       int index, IconData icon, IconData activeIcon, String label) {
-    // Crisis (4) is never "active" since it's external
-    final isActive = index < 4 && currentIndex == index;
+    final isActive = currentIndex == index;
     final color = isActive ? _activeColor : _inactiveColor;
 
     return Expanded(

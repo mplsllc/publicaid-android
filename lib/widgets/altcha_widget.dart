@@ -76,13 +76,17 @@ class _AltchaWidgetState extends State<AltchaWidget> {
     }
   }
 
-  Future<int?> _solveChallenge(AltchaChallenge challenge) {
-    // Run in background isolate to avoid freezing the UI on Android
-    return compute(_solveChallengeSync, {
+  Future<int?> _solveChallenge(AltchaChallenge challenge) async {
+    final params = {
       'salt': challenge.salt,
       'challenge': challenge.challenge,
       'maxnumber': challenge.maxnumber,
-    });
+    };
+    // compute() doesn't work on web, fall back to sync
+    if (kIsWeb) {
+      return _solveChallengeSync(params);
+    }
+    return compute(_solveChallengeSync, params);
   }
 
   @override
