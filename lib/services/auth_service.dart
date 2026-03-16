@@ -34,9 +34,17 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password, {String? altcha}) async {
-    final response = await _api.login(email, password, altcha: altcha);
+  Future<Map<String, dynamic>> login(String email, String password,
+      {String? altcha, String? totpCode}) async {
+    final response =
+        await _api.login(email, password, altcha: altcha, totpCode: totpCode);
     final data = response['data'] as Map<String, dynamic>;
+
+    // Check if 2FA is required
+    if (data['totp_required'] == true) {
+      return data;
+    }
+
     final token = data['token'] as String;
     final userData = UserData.fromJson(data['user'] as Map<String, dynamic>);
 
@@ -47,6 +55,7 @@ class AuthService extends ChangeNotifier {
     _api.setAuthToken(token);
     _state = AuthState(isLoggedIn: true, token: token, user: userData);
     notifyListeners();
+    return data;
   }
 
   Future<void> register(String email, String password, String passwordConfirm,

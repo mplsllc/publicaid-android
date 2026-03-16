@@ -22,12 +22,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _totpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   bool _obscurePassword = true;
   String? _error;
   String? _altchaSolution;
   bool _canUseBiometrics = false;
+  bool _needsTotp = false;
 
   @override
   void initState() {
@@ -53,11 +55,21 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await widget.authService.login(
+      final result = await widget.authService.login(
         _emailController.text.trim(),
         _passwordController.text,
         altcha: _altchaSolution,
+        totpCode: _needsTotp ? _totpController.text.trim() : null,
       );
+      if (result['totp_required'] == true) {
+        if (mounted) {
+          setState(() {
+            _needsTotp = true;
+            _loading = false;
+          });
+        }
+        return;
+      }
       if (mounted) Navigator.pop(context);
     } on ApiException catch (e) {
       if (mounted) {
@@ -116,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _totpController.dispose();
     super.dispose();
   }
 
@@ -220,6 +233,61 @@ class _LoginScreenState extends State<LoginScreen> {
                 onFieldSubmitted: (_) => _login(),
               ),
               const SizedBox(height: 20),
+
+              // TOTP input (shown when 2FA is required)
+              if (_needsTotp) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.heroBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Two-factor authentication',
+                        style: TextStyle(
+                          fontFamily: 'DMSans',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.navyBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Enter the 6-digit code from your authenticator app',
+                        style: TextStyle(
+                          fontFamily: 'DMSans',
+                          fontSize: 13,
+                          color: AppColors.grayText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _totpController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: '6-digit code',
+                          counterText: '',
+                          prefixIcon: Icon(Icons.security, size: 20),
+                        ),
+                        validator: (v) {
+                          if (_needsTotp && (v == null || v.length != 6)) {
+                            return 'Enter a 6-digit code';
+                          }
+                          return null;
+                        },
+                        onFieldSubmitted: (_) => _login(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // ALTCHA verification
               AltchaWidget(
