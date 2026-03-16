@@ -134,7 +134,7 @@ class _SearchScreenState extends State<SearchScreen> {
         // Auto-retry once after delay
         await Future.delayed(const Duration(seconds: 1));
         if (mounted && _results.isEmpty) {
-          _search();
+          _doSearch();
           return;
         }
         if (mounted) {
