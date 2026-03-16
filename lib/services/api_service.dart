@@ -188,18 +188,20 @@ class ApiService {
     });
   }
 
-  // Auth: Register (mobile API does not require ALTCHA)
+  // Auth: Register
   Future<Map<String, dynamic>> register(
     String email,
     String password,
     String passwordConfirm, {
     String? altcha,
   }) async {
-    return _userPost('register', body: {
+    final body = <String, dynamic>{
       'email': email,
       'password': password,
       'password_confirm': passwordConfirm,
-    });
+    };
+    if (altcha != null) body['altcha'] = altcha;
+    return _userPost('register', body: body);
   }
 
   // Auth: Get current user
