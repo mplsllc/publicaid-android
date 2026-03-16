@@ -155,6 +155,7 @@ class _AppShellState extends State<_AppShell> {
       ),
       BlogScreen(
         apiService: widget.apiService,
+        locationService: widget.locationService,
       ),
     ];
   }

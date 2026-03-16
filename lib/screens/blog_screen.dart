@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
+import '../services/location_service.dart';
 import '../theme.dart';
 
 const _topicCards = [
@@ -33,8 +36,9 @@ class _TopicCard {
 
 class BlogScreen extends StatefulWidget {
   final ApiService apiService;
+  final LocationService? locationService;
 
-  const BlogScreen({super.key, required this.apiService});
+  const BlogScreen({super.key, required this.apiService, this.locationService});
 
   @override
   State<BlogScreen> createState() => _BlogScreenState();
@@ -45,12 +49,31 @@ class _BlogScreenState extends State<BlogScreen> {
   bool _loading = true;
   String? _error;
   String? _selectedTopic;
+  String? _userState;
   int _page = 1;
   int _total = 0;
 
   @override
   void initState() {
     super.initState();
+    _detectStateAndLoad();
+  }
+
+  Future<void> _detectStateAndLoad() async {
+    // Try to detect user's state from location
+    final loc = widget.locationService;
+    if (loc != null && loc.permissionGranted && loc.currentLocation != null) {
+      try {
+        final pos = loc.currentLocation!;
+        final uri = Uri.parse(
+            'https://publicaid.org/api/state-from-coords?lat=${pos.latitude}&lon=${pos.longitude}');
+        final resp = await http.get(uri);
+        if (resp.statusCode == 200) {
+          final data = json.decode(resp.body) as Map<String, dynamic>;
+          _userState = data['state'] as String?;
+        }
+      } catch (_) {}
+    }
     _loadArticles();
   }
 
@@ -65,6 +88,7 @@ class _BlogScreenState extends State<BlogScreen> {
     try {
       final response = await widget.apiService.getBlogArticles(
         topic: topic,
+        state: _userState,
         page: page,
       );
       final data = response['data'] as List<dynamic>? ?? [];
@@ -327,16 +351,17 @@ class _BlogScreenState extends State<BlogScreen> {
             ),
             borderRadius: BorderRadius.circular(16),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 topic.emoji,
-                style: const TextStyle(fontSize: 26),
+                style: const TextStyle(fontSize: 22),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 topic.label,
                 style: const TextStyle(
@@ -346,7 +371,6 @@ class _BlogScreenState extends State<BlogScreen> {
                   color: AppColors.navyBlue,
                 ),
               ),
-              const SizedBox(height: 2),
               Text(
                 topic.subtitle,
                 style: const TextStyle(
