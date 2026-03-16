@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/auth_service.dart';
 import '../theme.dart';
 import '../widgets/app_menu.dart';
 
 class CrisisScreen extends StatelessWidget {
   final void Function(String)? onNavigate;
+  final AuthService? authService;
 
-  const CrisisScreen({super.key, this.onNavigate});
+  const CrisisScreen({super.key, this.onNavigate, this.authService});
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +17,7 @@ class CrisisScreen extends StatelessWidget {
         title: const Text('Crisis Resources'),
         automaticallyImplyLeading: false,
         actions: [
-          if (onNavigate != null)
-            AppMenuButton(onNavigate: onNavigate!),
+          AppMenuButton(onNavigate: onNavigate, authService: authService),
         ],
       ),
       body: SingleChildScrollView(

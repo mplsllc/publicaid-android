@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 /// Shows the hamburger menu as a bottom sheet.
-void showAppMenu(BuildContext context, {void Function(String)? onNavigate}) {
+/// Checks auth state to show Sign In vs Log Out.
+void showAppMenu(BuildContext context,
+    {void Function(String)? onNavigate, AuthService? authService}) {
+  final isLoggedIn = authService?.isLoggedIn ?? false;
+
   showModalBottomSheet(
     context: context,
     backgroundColor: const Color(0xFF0A2F57),
@@ -30,18 +35,29 @@ void showAppMenu(BuildContext context, {void Function(String)? onNavigate}) {
               Navigator.pop(ctx);
               onNavigate?.call('home');
             }),
-            _menuItem(ctx, Icons.login, 'Sign In', () {
-              Navigator.pop(ctx);
-              onNavigate?.call('login');
-            }),
-            _menuItem(ctx, Icons.person_outline, 'My Page', () {
-              Navigator.pop(ctx);
-              onNavigate?.call('account');
-            }),
-            _menuItem(ctx, Icons.settings_outlined, 'Settings', () {
-              Navigator.pop(ctx);
-              onNavigate?.call('account');
-            }),
+            if (isLoggedIn) ...[
+              _menuItem(ctx, Icons.person_outline, 'My Page', () {
+                Navigator.pop(ctx);
+                onNavigate?.call('account');
+              }),
+              _menuItem(ctx, Icons.settings_outlined, 'Settings', () {
+                Navigator.pop(ctx);
+                onNavigate?.call('account');
+              }),
+              _menuItem(ctx, Icons.logout, 'Log Out', () {
+                Navigator.pop(ctx);
+                authService?.logout();
+              }),
+            ] else ...[
+              _menuItem(ctx, Icons.login, 'Sign In', () {
+                Navigator.pop(ctx);
+                onNavigate?.call('login');
+              }),
+              _menuItem(ctx, Icons.person_add_outlined, 'Create Account', () {
+                Navigator.pop(ctx);
+                onNavigate?.call('register');
+              }),
+            ],
             const SizedBox(height: 8),
           ],
         ),
@@ -76,17 +92,18 @@ Widget _menuItem(
 }
 
 /// Hamburger menu icon button for AppBar actions.
-/// If [onNavigate] is null, the menu items will be no-ops.
 class AppMenuButton extends StatelessWidget {
   final void Function(String)? onNavigate;
+  final AuthService? authService;
 
-  const AppMenuButton({super.key, this.onNavigate});
+  const AppMenuButton({super.key, this.onNavigate, this.authService});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.menu),
-      onPressed: () => showAppMenu(context, onNavigate: onNavigate),
+      onPressed: () => showAppMenu(context,
+          onNavigate: onNavigate, authService: authService),
     );
   }
 }

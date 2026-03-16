@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/location_service.dart';
 import '../widgets/app_menu.dart';
 import '../theme.dart';
@@ -39,8 +40,9 @@ class BlogScreen extends StatefulWidget {
   final ApiService apiService;
   final LocationService? locationService;
   final void Function(String)? onNavigate;
+  final AuthService? authService;
 
-  const BlogScreen({super.key, required this.apiService, this.locationService, this.onNavigate});
+  const BlogScreen({super.key, required this.apiService, this.locationService, this.onNavigate, this.authService});
 
   @override
   State<BlogScreen> createState() => _BlogScreenState();
@@ -144,8 +146,7 @@ class _BlogScreenState extends State<BlogScreen> {
         title: const Text('Blog'),
         automaticallyImplyLeading: false,
         actions: [
-          if (widget.onNavigate != null)
-            AppMenuButton(onNavigate: widget.onNavigate),
+          AppMenuButton(onNavigate: widget.onNavigate, authService: widget.authService),
         ],
       ),
       body: RefreshIndicator(

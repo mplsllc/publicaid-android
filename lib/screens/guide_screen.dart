@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../widgets/app_menu.dart';
 import '../services/location_service.dart';
 import '../theme.dart';
@@ -63,12 +64,14 @@ class GuideScreen extends StatelessWidget {
   final ApiService apiService;
   final LocationService locationService;
   final void Function(String)? onNavigate;
+  final AuthService? authService;
 
   const GuideScreen({
     super.key,
     required this.apiService,
     required this.locationService,
     this.onNavigate,
+    this.authService,
   });
 
   void _onOptionTap(BuildContext context, _GuideOption option) {
@@ -104,8 +107,7 @@ class GuideScreen extends StatelessWidget {
         title: const Text('Guided Help'),
         automaticallyImplyLeading: false,
         actions: [
-          if (onNavigate != null)
-            AppMenuButton(onNavigate: onNavigate!),
+          AppMenuButton(onNavigate: onNavigate, authService: authService),
         ],
       ),
       body: ListView(

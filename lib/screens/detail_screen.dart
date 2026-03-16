@@ -46,17 +46,16 @@ class _DetailScreenState extends State<DetailScreen> {
     });
 
     try {
-      final results = await Future.wait([
-        widget.apiService.getEntity(widget.entityId),
-        widget.apiService.getEntityServices(widget.entityId),
-        widget.apiService.getEntityHours(widget.entityId),
-      ]);
+      // Load sequentially to avoid rate limiting
+      final entity = await widget.apiService.getEntity(widget.entityId);
+      final services = await widget.apiService.getEntityServices(widget.entityId);
+      final hours = await widget.apiService.getEntityHours(widget.entityId);
 
       if (mounted) {
         setState(() {
-          _entity = results[0] as Entity;
-          _services = results[1] as List<EntityService>;
-          _hours = results[2] as List<EntityHours>;
+          _entity = entity;
+          _services = services;
+          _hours = hours;
           _loading = false;
           _retryCount = 0;
         });

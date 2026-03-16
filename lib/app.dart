@@ -11,6 +11,7 @@ import 'screens/blog_screen.dart';
 import 'screens/crisis_screen.dart';
 import 'screens/account_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/docs_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/app_menu.dart';
@@ -151,13 +152,18 @@ class _AppShellState extends State<_AppShell> {
         apiService: widget.apiService,
         locationService: widget.locationService,
         onNavigate: _handleMenuNav,
+        authService: widget.authService,
       ),
       BlogScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
         onNavigate: _handleMenuNav,
+        authService: widget.authService,
       ),
-      CrisisScreen(onNavigate: _handleMenuNav),
+      CrisisScreen(
+        onNavigate: _handleMenuNav,
+        authService: widget.authService,
+      ),
     ];
   }
 
@@ -180,6 +186,16 @@ class _AppShellState extends State<_AppShell> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AccountScreen(
+              authService: widget.authService,
+              apiService: widget.apiService,
+            ),
+          ),
+        );
+        break;
+      case 'register':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => RegisterScreen(
               authService: widget.authService,
               apiService: widget.apiService,
             ),
