@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/entity.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../services/bookmark_service.dart';
 import '../services/location_service.dart';
 import '../theme.dart';
 import '../widgets/entity_card.dart';
@@ -9,6 +11,8 @@ import 'detail_screen.dart';
 class SearchScreen extends StatefulWidget {
   final ApiService apiService;
   final LocationService locationService;
+  final AuthService? authService;
+  final BookmarkService? bookmarkService;
   final String? initialQuery;
   final String? initialCategory;
 
@@ -16,6 +20,8 @@ class SearchScreen extends StatefulWidget {
     super.key,
     required this.apiService,
     required this.locationService,
+    this.authService,
+    this.bookmarkService,
     this.initialQuery,
     this.initialCategory,
   });
@@ -224,6 +230,8 @@ class _SearchScreenState extends State<SearchScreen> {
           apiService: widget.apiService,
           entityId: entity.id,
           entityName: entity.name,
+          authService: widget.authService,
+          bookmarkService: widget.bookmarkService,
         ),
       ),
     );

@@ -147,6 +147,8 @@ class _AppShellState extends State<_AppShell> {
       SearchScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
+        authService: widget.authService,
+        bookmarkService: widget.bookmarkService,
       ),
       GuideScreen(
         apiService: widget.apiService,

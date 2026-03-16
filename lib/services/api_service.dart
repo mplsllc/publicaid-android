@@ -229,6 +229,12 @@ class ApiService {
     return (json['data'] as Map<String, dynamic>)['saved'] as bool? ?? false;
   }
 
+  // Support: Toggle
+  Future<bool> toggleSupport(String entityId) async {
+    final json = await _userPost('support/$entityId');
+    return (json['data'] as Map<String, dynamic>)['supported'] as bool? ?? false;
+  }
+
   // Blog: Get articles list
   Future<Map<String, dynamic>> getBlogArticles({
     String? topic,

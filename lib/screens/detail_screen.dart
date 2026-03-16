@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/entity.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/bookmark_service.dart';
 import '../theme.dart';
 
@@ -11,6 +12,7 @@ class DetailScreen extends StatefulWidget {
   final String entityId;
   final String entityName;
   final BookmarkService? bookmarkService;
+  final AuthService? authService;
 
   const DetailScreen({
     super.key,
@@ -18,6 +20,7 @@ class DetailScreen extends StatefulWidget {
     required this.entityId,
     required this.entityName,
     this.bookmarkService,
+    this.authService,
   });
 
   @override
@@ -30,6 +33,8 @@ class _DetailScreenState extends State<DetailScreen> {
   List<EntityHours> _hours = [];
   bool _loading = true;
   String? _error;
+  bool _isSupporting = false;
+  bool _savingSupport = false;
 
   @override
   void initState() {
@@ -90,6 +95,16 @@ class _DetailScreenState extends State<DetailScreen> {
       categoryName: e.categories.isNotEmpty ? e.categories.first.name : null,
     );
     setState(() {}); // Rebuild to reflect bookmark state
+  }
+
+  Future<void> _toggleSupport() async {
+    if (widget.authService == null || !widget.authService!.isLoggedIn) return;
+    setState(() => _savingSupport = true);
+    try {
+      final result = await widget.apiService.toggleSupport(widget.entityId);
+      if (mounted) setState(() => _isSupporting = result);
+    } catch (_) {}
+    if (mounted) setState(() => _savingSupport = false);
   }
 
   void _openDirections() {
@@ -162,6 +177,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Widget _buildContent() {
     final e = _entity!;
+    final isBookmarked = widget.bookmarkService?.isBookmarked(widget.entityId) ?? false;
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
@@ -169,24 +185,53 @@ class _DetailScreenState extends State<DetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Action buttons
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               if (e.lat != null && e.lng != null)
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _openDirections,
-                    icon: const Icon(Icons.directions, size: 18),
-                    label: const Text('Directions'),
-                  ),
+                ElevatedButton.icon(
+                  onPressed: _openDirections,
+                  icon: const Icon(Icons.directions, size: 18),
+                  label: const Text('Directions'),
                 ),
-              if (e.lat != null && e.lng != null) const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _shareEntity,
-                  icon: const Icon(Icons.share, size: 18),
-                  label: const Text('Share'),
-                ),
+              OutlinedButton.icon(
+                onPressed: _shareEntity,
+                icon: const Icon(Icons.share, size: 18),
+                label: const Text('Share'),
               ),
+              if (widget.authService?.isLoggedIn == true) ...[
+                OutlinedButton.icon(
+                  onPressed: _toggleBookmark,
+                  icon: Icon(
+                    isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                    size: 18,
+                    color: isBookmarked ? AppColors.brightBlue : null,
+                  ),
+                  label: Text(isBookmarked ? 'Saved' : 'Save'),
+                  style: isBookmarked
+                      ? OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.brightBlue),
+                          foregroundColor: AppColors.brightBlue,
+                        )
+                      : null,
+                ),
+                OutlinedButton.icon(
+                  onPressed: _savingSupport ? null : _toggleSupport,
+                  icon: Icon(
+                    _isSupporting ? Icons.favorite : Icons.favorite_border,
+                    size: 18,
+                    color: _isSupporting ? Colors.red : null,
+                  ),
+                  label: Text(_isSupporting ? 'Supporting' : 'I Support'),
+                  style: _isSupporting
+                      ? OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: Colors.red,
+                        )
+                      : null,
+                ),
+              ],
             ],
           ),
 
