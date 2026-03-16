@@ -6,9 +6,7 @@ import 'services/bookmark_service.dart';
 import 'services/location_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
-import 'screens/bookmarks_screen.dart';
 import 'screens/categories_screen.dart';
-import 'screens/account_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
 
@@ -94,7 +92,7 @@ class _SplashScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'publicaid',
+              'Publicaid',
               style: TextStyle(
                 fontFamily: 'InstrumentSerif',
                 fontSize: 36,
@@ -152,17 +150,9 @@ class _AppShellState extends State<_AppShell> {
         apiService: widget.apiService,
         locationService: widget.locationService,
       ),
-      BookmarksScreen(
-        bookmarkService: widget.bookmarkService,
-        apiService: widget.apiService,
-      ),
       CategoriesScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
-      ),
-      AccountScreen(
-        authService: widget.authService,
-        apiService: widget.apiService,
       ),
     ];
   }

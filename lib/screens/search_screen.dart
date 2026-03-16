@@ -4,7 +4,6 @@ import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../theme.dart';
 import '../widgets/entity_card.dart';
-import '../widgets/search_bar.dart';
 import 'detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -112,8 +111,12 @@ class _SearchScreenState extends State<SearchScreen> {
             : null,
         category: _selectedCategory,
         state: _selectedState,
-        lat: widget.locationService.currentLocation != null ? loc.latitude : null,
-        lng: widget.locationService.currentLocation != null ? loc.longitude : null,
+        lat: widget.locationService.currentLocation != null
+            ? loc.latitude
+            : null,
+        lng: widget.locationService.currentLocation != null
+            ? loc.longitude
+            : null,
         limit: _limit,
         offset: 0,
       );
@@ -149,8 +152,12 @@ class _SearchScreenState extends State<SearchScreen> {
             : null,
         category: _selectedCategory,
         state: _selectedState,
-        lat: widget.locationService.currentLocation != null ? loc.latitude : null,
-        lng: widget.locationService.currentLocation != null ? loc.longitude : null,
+        lat: widget.locationService.currentLocation != null
+            ? loc.latitude
+            : null,
+        lng: widget.locationService.currentLocation != null
+            ? loc.longitude
+            : null,
         limit: _limit,
         offset: _offset,
       );
@@ -217,19 +224,123 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: SizedBox(
-          height: 42,
-          child: AppSearchBar(
-            controller: _searchController,
-            onSubmitted: (_) => _doSearch(),
-            onFilterTap: _showFilterSheet,
-            hintText: 'Search services...',
+      backgroundColor: AppColors.lightBg,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(110),
+        child: Container(
+          color: AppColors.navyBlue,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Back button row
+                  Row(
+                    children: [
+                      if (Navigator.of(context).canPop())
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.arrow_back,
+                              color: Colors.white, size: 24),
+                        ),
+                      if (Navigator.of(context).canPop())
+                        const SizedBox(width: 12),
+                      const Text(
+                        'Search',
+                        style: TextStyle(
+                          fontFamily: 'InstrumentSerif',
+                          fontSize: 20,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: _showFilterSheet,
+                        child: const Icon(Icons.tune,
+                            color: Colors.white70, size: 22),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Search input row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 42,
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'e.g. detox, food pantry, shelter...',
+                              prefixIcon: const Icon(Icons.search,
+                                  color: AppColors.mediumGray, size: 20),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 0),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              hintStyle: const TextStyle(
+                                fontFamily: 'DMSans',
+                                color: AppColors.mediumGray,
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              fontFamily: 'DMSans',
+                              fontSize: 14,
+                              color: AppColors.navyBlue,
+                            ),
+                            textInputAction: TextInputAction.search,
+                            onSubmitted: (_) => _doSearch(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 42,
+                        child: ElevatedButton(
+                          onPressed: _doSearch,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.brightBlue,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 0),
+                          ),
+                          child: const Text(
+                            'Search',
+                            style: TextStyle(
+                              fontFamily: 'DMSans',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        titleSpacing: 0,
-        backgroundColor: AppColors.navyBlue,
-        foregroundColor: Colors.white,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,15 +370,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 if (_selectedCategory != null)
                   Chip(
                     label: Text(_selectedCategory!),
-                    deleteIcon:
-                        const Icon(Icons.close, size: 16),
+                    deleteIcon: const Icon(Icons.close, size: 16),
                     onDeleted: _removeCategory,
                   ),
                 if (_selectedState != null)
                   Chip(
                     label: Text(_selectedState!),
-                    deleteIcon:
-                        const Icon(Icons.close, size: 16),
+                    deleteIcon: const Icon(Icons.close, size: 16),
                     onDeleted: _removeState,
                   ),
               ],
@@ -276,11 +385,11 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
           if (!_loading)
             Text(
-              '$_total result${_total == 1 ? '' : 's'}',
+              'Showing ${_results.length} of $_total result${_total == 1 ? '' : 's'}',
               style: const TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 13,
-                color: AppColors.grayText,
+                color: Color(0xFF5A7A9E),
               ),
             ),
         ],
@@ -318,7 +427,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 56, color: AppColors.mediumGray.withAlpha(128)),
+            Icon(Icons.search_off,
+                size: 56, color: AppColors.mediumGray.withAlpha(128)),
             const SizedBox(height: 12),
             const Text(
               'No results found',
@@ -444,7 +554,8 @@ class _FilterSheetState extends State<_FilterSheet> {
               hintText: 'All categories',
             ),
             items: [
-              const DropdownMenuItem(value: null, child: Text('All categories')),
+              const DropdownMenuItem(
+                  value: null, child: Text('All categories')),
               ...widget.categoryOptions.map((c) => DropdownMenuItem(
                     value: c['slug'],
                     child: Text(c['name'] ?? c['slug']!),
@@ -467,7 +578,8 @@ class _FilterSheetState extends State<_FilterSheet> {
               hintText: 'All states',
             ),
             items: [
-              const DropdownMenuItem(value: null, child: Text('All states')),
+              const DropdownMenuItem(
+                  value: null, child: Text('All states')),
               ...widget.stateOptions.map((s) => DropdownMenuItem(
                     value: s,
                     child: Text(s),
