@@ -250,10 +250,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       const Text(
                         'Search',
                         style: TextStyle(
-                          fontFamily: 'InstrumentSerif',
-                          fontSize: 20,
+                          fontFamily: 'DMSans',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: -0.3,
                         ),
                       ),
                       const Spacer(),
