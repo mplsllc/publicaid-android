@@ -192,6 +192,7 @@ class _AppShellState extends State<_AppShell> {
             builder: (_) => AccountScreen(
               authService: widget.authService,
               apiService: widget.apiService,
+              onNavigate: _handleMenuNav,
             ),
           ),
         );

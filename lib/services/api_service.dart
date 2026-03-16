@@ -229,6 +229,16 @@ class ApiService {
     return (json['data'] as Map<String, dynamic>)['saved'] as bool? ?? false;
   }
 
+  // Support: Get list
+  Future<List<BookmarkItem>> getSupported() async {
+    final json = await _userGet('support');
+    final data = json['data'];
+    if (data == null || data is! List) return [];
+    return data
+        .map((e) => BookmarkItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   // Support: Toggle
   Future<bool> toggleSupport(String entityId) async {
     final json = await _userPost('support/$entityId');
