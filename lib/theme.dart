@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class AppColors {
   static const navyBlue = Color(0xFF0D3B6E);
@@ -92,17 +91,12 @@ ThemeData buildAppTheme() {
         color: Colors.white,
       ),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.navyBlue,
       foregroundColor: Colors.white,
       elevation: 0,
       scrolledUnderElevation: 0,
-      systemOverlayStyle: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-      titleTextStyle: const TextStyle(
+      titleTextStyle: TextStyle(
         fontFamily: 'DMSans',
         fontSize: 18,
         fontWeight: FontWeight.w600,
