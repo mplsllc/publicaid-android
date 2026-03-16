@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/bookmark_service.dart';
@@ -60,12 +59,6 @@ class _PublicaidAppState extends State<PublicaidApp> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: AppColors.navyBlue,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
-    ));
-
     return MaterialApp(
       title: 'Publicaid',
       debugShowCheckedModeBanner: false,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class AppColors {
   static const navyBlue = Color(0xFF0D3B6E);
@@ -96,11 +95,6 @@ ThemeData buildAppTheme() {
       backgroundColor: AppColors.navyBlue,
       foregroundColor: Colors.white,
       elevation: 0,
-      systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarColor: AppColors.navyBlue,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
     ),
     cardTheme: CardThemeData(
       color: Colors.white,
