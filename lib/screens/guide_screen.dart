@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../theme.dart';
@@ -100,6 +101,10 @@ class GuideScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Guided Help'),
         automaticallyImplyLeading: false,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+        ),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(
