@@ -131,10 +131,18 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = 'Search failed. Please try again.';
-          _loading = false;
-        });
+        // Auto-retry once after delay
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted && _results.isEmpty) {
+          _search();
+          return;
+        }
+        if (mounted) {
+          setState(() {
+            _error = 'Search failed. Tap to retry.';
+            _loading = false;
+          });
+        }
       }
     }
   }

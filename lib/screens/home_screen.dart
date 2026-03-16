@@ -77,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadCategories() async {
+    // Don't reload if we already have data
+    if (_categories.isNotEmpty) return;
     try {
       final categories = await widget.apiService.getCategories();
       if (mounted) {
@@ -87,10 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = 'Could not load categories';
-          _loadingCategories = false;
-        });
+        // Auto-retry after a delay instead of showing error
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted && _categories.isEmpty) _loadCategories();
       }
     }
   }

@@ -102,10 +102,11 @@ class _BlogScreenState extends State<BlogScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = 'Could not load articles';
-          _loading = false;
-        });
+        // Auto-retry after a delay
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted && _articles.isEmpty) {
+          _loadArticles(topic: topic, page: page);
+        }
       }
     }
   }
