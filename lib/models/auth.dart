@@ -1,22 +1,28 @@
 class UserData {
-  final int id;
+  final String id;
   final String email;
   final String? name;
+  final String? username;
+  final String? avatarUrl;
   final String? createdAt;
 
   UserData({
     required this.id,
     required this.email,
     this.name,
+    this.username,
+    this.avatarUrl,
     this.createdAt,
   });
 
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       email: json['email'] as String,
-      name: json['name'] as String?,
-      createdAt: json['created_at'] as String?,
+      name: json['display_name'] as String? ?? json['name'] as String?,
+      username: json['username'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      createdAt: json['created_at']?.toString(),
     );
   }
 }
