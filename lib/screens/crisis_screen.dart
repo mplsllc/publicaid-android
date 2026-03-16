@@ -8,6 +8,10 @@ class CrisisScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Crisis Resources'),
+        automaticallyImplyLeading: false,
+      ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -15,8 +19,8 @@ class CrisisScreen extends StatelessWidget {
             // Red 988 hero
             Container(
               width: double.infinity,
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 32,
+              padding: const EdgeInsets.only(
+                top: 32,
                 bottom: 32,
                 left: 20,
                 right: 20,

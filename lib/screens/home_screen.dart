@@ -133,6 +133,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE8F0FA),
+      appBar: AppBar(
+        title: Image.asset('assets/images/logo-light.png', height: 28),
+        automaticallyImplyLeading: false,
+      ),
       body: RefreshIndicator(
         onRefresh: _loadCategories,
         child: CustomScrollView(
@@ -273,33 +277,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 20,
+        padding: const EdgeInsets.only(
+          top: 16,
           left: 20,
           right: 20,
-          bottom: 0, // card handles the bottom spacing
+          bottom: 0,
         ),
         child: Column(
           children: [
-            // Header row: logo + hamburger
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Image.asset('assets/images/logo-light.png', height: 40),
-                GestureDetector(
-                  onTap: () => _showMobileMenu(context),
-                  child: SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: Center(
-                      child: Icon(Icons.menu,
-                          color: Colors.white.withAlpha(179), size: 22),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             // Search card — white, rounded-2xl, shadow, pokes 32px below hero
             Transform.translate(
               offset: const Offset(0, 32),
