@@ -7,6 +7,7 @@ import 'services/location_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/guide_screen.dart';
+import 'screens/blog_screen.dart';
 import 'screens/account_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
@@ -151,6 +152,9 @@ class _AppShellState extends State<_AppShell> {
       GuideScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
+      ),
+      BlogScreen(
+        apiService: widget.apiService,
       ),
     ];
   }

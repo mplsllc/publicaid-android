@@ -158,53 +158,94 @@ class ApiService {
     return json['data'] as Map<String, dynamic>;
   }
 
+  static const String _userBaseUrl = 'https://publicaid.org/api/user';
+
+  Future<Map<String, dynamic>> _userPost(String path,
+      {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$_userBaseUrl/$path');
+    final response = await http.post(uri, headers: _headers,
+        body: body != null ? json.encode(body) : null);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    }
+    throw ApiException(response.statusCode, _parseErrorMessage(response.body));
+  }
+
+  Future<Map<String, dynamic>> _userGet(String path) async {
+    final uri = Uri.parse('$_userBaseUrl/$path');
+    final response = await http.get(uri, headers: _headers);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    }
+    throw ApiException(response.statusCode, _parseErrorMessage(response.body));
+  }
+
   // Auth: Login
   Future<Map<String, dynamic>> login(String email, String password) async {
-    return _post('user/login', body: {
+    return _userPost('login', body: {
       'email': email,
       'password': password,
     });
   }
 
-  // Auth: Register
+  // Auth: Register (mobile API does not require ALTCHA)
   Future<Map<String, dynamic>> register(
     String email,
     String password,
     String passwordConfirm, {
     String? altcha,
   }) async {
-    final body = <String, dynamic>{
+    return _userPost('register', body: {
       'email': email,
       'password': password,
       'password_confirm': passwordConfirm,
-    };
-    if (altcha != null) body['altcha'] = altcha;
-    return _post('user/register', body: body);
+    });
   }
 
   // Auth: Get current user
   Future<UserData> getMe() async {
-    final json = await _get('user/me');
+    final json = await _userGet('me');
     return UserData.fromJson(json['data'] as Map<String, dynamic>);
   }
 
   // Bookmarks: Get list
   Future<List<BookmarkItem>> getBookmarks() async {
-    final json = await _get('user/bookmarks');
-    return (json['data'] as List<dynamic>)
+    final json = await _userGet('bookmarks');
+    final data = json['data'];
+    if (data == null || data is! List) return [];
+    return data
         .map((e) => BookmarkItem.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   // Bookmarks: Toggle
   Future<bool> toggleBookmark(String entityId) async {
-    final json = await _post('user/bookmarks/$entityId');
+    final json = await _userPost('bookmarks/$entityId');
     return (json['data'] as Map<String, dynamic>)['saved'] as bool? ?? false;
+  }
+
+  // Blog: Get articles list
+  Future<Map<String, dynamic>> getBlogArticles({
+    String? topic,
+    String? state,
+    int page = 1,
+  }) async {
+    final params = <String, String>{
+      'page': page.toString(),
+    };
+    if (topic != null && topic.isNotEmpty) params['topic'] = topic;
+    if (state != null && state.isNotEmpty) params['state'] = state;
+    return _get('blog', queryParams: params);
+  }
+
+  // Blog: Get single article by slug
+  Future<Map<String, dynamic>> getBlogArticle(String slug) async {
+    return _get('blog/$slug');
   }
 
   // ALTCHA: Get challenge
   Future<AltchaChallenge> getAltchaChallenge() async {
-    final uri = Uri.parse('$baseUrl/altcha/challenge');
+    final uri = Uri.parse('https://publicaid.org/api/altcha/challenge');
     final response = await http.get(uri, headers: _headers);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final data = json.decode(response.body) as Map<String, dynamic>;

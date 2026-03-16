@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,15 +15,6 @@ class AppBottomNav extends StatelessWidget {
   static const _inactiveColor = Color(0xFF8BA8C8);
 
   void _handleTap(int index) {
-    if (index == 3) {
-      // Blog — same tab on web, in-app browser on mobile
-      launchUrl(
-        Uri.parse('https://publicaid.org/blog'),
-        mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.inAppBrowserView,
-        webOnlyWindowName: kIsWeb ? '_self' : null,
-      );
-      return;
-    }
     if (index == 4) {
       // Crisis — dial 988
       launchUrl(Uri.parse('tel:988'));
@@ -72,8 +62,8 @@ class AppBottomNav extends StatelessWidget {
 
   Widget _buildTab(
       int index, IconData icon, IconData activeIcon, String label) {
-    // Blog (3) and Crisis (4) are never "active" since they're external
-    final isActive = index < 3 && currentIndex == index;
+    // Crisis (4) is never "active" since it's external
+    final isActive = index < 4 && currentIndex == index;
     final color = isActive ? _activeColor : _inactiveColor;
 
     return Expanded(

@@ -345,8 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
               }),
               _menuItem(ctx, 'Blog', onAction: () {
                 Navigator.pop(ctx);
-                launchUrl(Uri.parse('https://publicaid.org/blog'),
-                    mode: LaunchMode.externalApplication);
+                widget.onSwitchTab?.call(3);
               }),
               _menuItem(ctx, 'Crisis', color: const Color(0xFFEF9A9A),
                   onAction: () {

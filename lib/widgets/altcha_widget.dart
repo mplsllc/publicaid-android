@@ -1,9 +1,23 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/auth.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
+
+// Top-level function so it can run in a background isolate via compute()
+int? _solveChallengeSync(Map<String, dynamic> params) {
+  final salt = params['salt'] as String;
+  final challenge = params['challenge'] as String;
+  final maxnumber = params['maxnumber'] as int;
+  for (int n = 0; n <= maxnumber; n++) {
+    final input = '$salt$n';
+    final hash = sha256.convert(utf8.encode(input)).toString();
+    if (hash == challenge) return n;
+  }
+  return null;
+}
 
 enum AltchaState { idle, loading, verified, error }
 
@@ -62,16 +76,13 @@ class _AltchaWidgetState extends State<AltchaWidget> {
     }
   }
 
-  Future<int?> _solveChallenge(AltchaChallenge challenge) async {
-    // SHA-256 proof-of-work: find N where sha256(salt + N) == challenge
-    for (int n = 0; n <= challenge.maxnumber; n++) {
-      final input = '${challenge.salt}$n';
-      final hash = sha256.convert(utf8.encode(input)).toString();
-      if (hash == challenge.challenge) {
-        return n;
-      }
-    }
-    return null;
+  Future<int?> _solveChallenge(AltchaChallenge challenge) {
+    // Run in background isolate to avoid freezing the UI on Android
+    return compute(_solveChallengeSync, {
+      'salt': challenge.salt,
+      'challenge': challenge.challenge,
+      'maxnumber': challenge.maxnumber,
+    });
   }
 
   @override

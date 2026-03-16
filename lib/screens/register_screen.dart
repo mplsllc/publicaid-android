@@ -230,7 +230,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ALTCHA
+              const SizedBox(height: 16),
+
+              // ALTCHA verification
               AltchaWidget(
                 apiService: widget.apiService,
                 onVerified: (solution) {
