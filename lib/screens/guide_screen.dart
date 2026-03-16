@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/app_menu.dart';
 import '../services/location_service.dart';
 import '../theme.dart';
 import 'categories_screen.dart';
@@ -61,11 +62,13 @@ const _guideOptions = [
 class GuideScreen extends StatelessWidget {
   final ApiService apiService;
   final LocationService locationService;
+  final void Function(String)? onNavigate;
 
   const GuideScreen({
     super.key,
     required this.apiService,
     required this.locationService,
+    this.onNavigate,
   });
 
   void _onOptionTap(BuildContext context, _GuideOption option) {
@@ -100,6 +103,10 @@ class GuideScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Guided Help'),
         automaticallyImplyLeading: false,
+        actions: [
+          if (onNavigate != null)
+            AppMenuButton(onNavigate: onNavigate!),
+        ],
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(
@@ -175,7 +182,7 @@ class GuideScreen extends StatelessWidget {
           Center(
             child: GestureDetector(
               onTap: () {
-                // Could open docs URL in browser in the future
+                onNavigate?.call('docs');
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,

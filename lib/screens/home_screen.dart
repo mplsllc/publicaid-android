@@ -136,6 +136,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Image.asset('assets/images/logo-light.png', height: 28),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => _showMobileMenu(context),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadCategories,

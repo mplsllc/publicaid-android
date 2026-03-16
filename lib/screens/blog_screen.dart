@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
 import '../services/location_service.dart';
+import '../widgets/app_menu.dart';
 import '../theme.dart';
 
 const _topicCards = [
@@ -37,8 +38,9 @@ class _TopicCard {
 class BlogScreen extends StatefulWidget {
   final ApiService apiService;
   final LocationService? locationService;
+  final void Function(String)? onNavigate;
 
-  const BlogScreen({super.key, required this.apiService, this.locationService});
+  const BlogScreen({super.key, required this.apiService, this.locationService, this.onNavigate});
 
   @override
   State<BlogScreen> createState() => _BlogScreenState();
@@ -141,6 +143,10 @@ class _BlogScreenState extends State<BlogScreen> {
       appBar: AppBar(
         title: const Text('Blog'),
         automaticallyImplyLeading: false,
+        actions: [
+          if (widget.onNavigate != null)
+            AppMenuButton(onNavigate: widget.onNavigate),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => _loadArticles(topic: _selectedTopic, page: _page),

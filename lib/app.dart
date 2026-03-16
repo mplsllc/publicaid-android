@@ -10,7 +10,10 @@ import 'screens/guide_screen.dart';
 import 'screens/blog_screen.dart';
 import 'screens/crisis_screen.dart';
 import 'screens/account_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/docs_screen.dart';
 import 'widgets/bottom_nav.dart';
+import 'widgets/app_menu.dart';
 import 'theme.dart';
 
 class PublicaidApp extends StatefulWidget {
@@ -138,7 +141,7 @@ class _AppShellState extends State<_AppShell> {
         apiService: widget.apiService,
         locationService: widget.locationService,
         onSwitchTab: (index) => setState(() => _currentIndex = index),
-        onOpenAccount: _openAccountScreen,
+        onOpenAccount: () => _handleMenuNav('account'),
       ),
       SearchScreen(
         apiService: widget.apiService,
@@ -147,24 +150,50 @@ class _AppShellState extends State<_AppShell> {
       GuideScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
+        onNavigate: _handleMenuNav,
       ),
       BlogScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
+        onNavigate: _handleMenuNav,
       ),
-      const CrisisScreen(),
+      CrisisScreen(onNavigate: _handleMenuNav),
     ];
   }
 
-  void _openAccountScreen() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AccountScreen(
-          authService: widget.authService,
-          apiService: widget.apiService,
-        ),
-      ),
-    );
+  void _handleMenuNav(String route) {
+    switch (route) {
+      case 'home':
+        setState(() => _currentIndex = 0);
+        break;
+      case 'login':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LoginScreen(
+              authService: widget.authService,
+              apiService: widget.apiService,
+            ),
+          ),
+        );
+        break;
+      case 'account':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AccountScreen(
+              authService: widget.authService,
+              apiService: widget.apiService,
+            ),
+          ),
+        );
+        break;
+      case 'docs':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DocsScreen(onNavigate: _handleMenuNav),
+          ),
+        );
+        break;
+    }
   }
 
   @override
