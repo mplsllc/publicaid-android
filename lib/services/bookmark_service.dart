@@ -98,8 +98,11 @@ class BookmarkService extends ChangeNotifier {
     // Sync with server if logged in
     if (_auth.isLoggedIn) {
       try {
-        await _api.toggleBookmark(entityId);
-      } catch (_) {
+        debugPrint('BookmarkService: toggling $entityId on server');
+        final result = await _api.toggleBookmark(entityId);
+        debugPrint('BookmarkService: server returned saved=$result');
+      } catch (e) {
+        debugPrint('BookmarkService: server toggle failed: $e');
         // Revert on failure
         if (wasBookmarked) {
           _bookmarkedIds.add(entityId);
