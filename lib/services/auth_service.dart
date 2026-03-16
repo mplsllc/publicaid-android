@@ -34,8 +34,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
-    final response = await _api.login(email, password);
+  Future<void> login(String email, String password, {String? altcha}) async {
+    final response = await _api.login(email, password, altcha: altcha);
     final data = response['data'] as Map<String, dynamic>;
     final token = data['token'] as String;
     final userData = UserData.fromJson(data['user'] as Map<String, dynamic>);

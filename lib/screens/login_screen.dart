@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
+import '../widgets/altcha_widget.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
   bool _obscurePassword = true;
   String? _error;
+  String? _altchaSolution;
   bool _canUseBiometrics = false;
 
   @override
@@ -40,6 +42,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_altchaSolution == null) {
+      setState(() => _error = 'Please complete the verification');
+      return;
+    }
 
     setState(() {
       _loading = true;
@@ -50,12 +56,30 @@ class _LoginScreenState extends State<LoginScreen> {
       await widget.authService.login(
         _emailController.text.trim(),
         _passwordController.text,
+        altcha: _altchaSolution,
       );
       if (mounted) Navigator.pop(context);
     } on ApiException catch (e) {
       if (mounted) {
+        String msg;
+        switch (e.message) {
+          case 'invalid_credentials':
+            msg = 'Invalid email or password';
+            break;
+          case 'email_not_verified':
+            msg = 'Please verify your email first. Check your inbox.';
+            break;
+          case 'account_suspended':
+            msg = 'Your account has been suspended';
+            break;
+          case 'verification_failed':
+            msg = 'Verification failed. Please try again.';
+            break;
+          default:
+            msg = 'Login failed. Please try again.';
+        }
         setState(() {
-          _error = e.message;
+          _error = msg;
           _loading = false;
         });
       }
@@ -107,7 +131,6 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              // Header
               const Text(
                 'Welcome back',
                 style: TextStyle(
@@ -127,7 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Error banner
               if (_error != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -157,7 +179,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Email field
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -174,7 +195,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Password field
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -199,13 +219,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 onFieldSubmitted: (_) => _login(),
               ),
+              const SizedBox(height: 20),
+
+              // ALTCHA verification
+              AltchaWidget(
+                apiService: widget.apiService,
+                onVerified: (solution) {
+                  setState(() => _altchaSolution = solution);
+                },
+              ),
               const SizedBox(height: 24),
 
-              // Sign in button
               SizedBox(
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _login,
+                  onPressed:
+                      (_loading || _altchaSolution == null) ? null : _login,
                   child: _loading
                       ? const SizedBox(
                           height: 20,
@@ -219,7 +248,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // Biometric login
               if (_canUseBiometrics) ...[
                 const SizedBox(height: 16),
                 SizedBox(
@@ -232,7 +260,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
 
-              // Register link
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

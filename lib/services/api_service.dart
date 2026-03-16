@@ -181,11 +181,14 @@ class ApiService {
   }
 
   // Auth: Login
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    return _userPost('login', body: {
+  Future<Map<String, dynamic>> login(String email, String password,
+      {String? altcha}) async {
+    final body = <String, dynamic>{
       'email': email,
       'password': password,
-    });
+    };
+    if (altcha != null) body['altcha'] = altcha;
+    return _userPost('login', body: body);
   }
 
   // Auth: Register
