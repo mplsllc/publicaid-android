@@ -141,6 +141,8 @@ class _AppShellState extends State<_AppShell> {
       HomeScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
+        authService: widget.authService,
+        bookmarkService: widget.bookmarkService,
         onSwitchTab: (index) => setState(() => _currentIndex = index),
         onOpenAccount: () => _handleMenuNav('account'),
       ),

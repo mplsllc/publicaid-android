@@ -92,6 +92,7 @@ class GuideScreen extends StatelessWidget {
           builder: (_) => SearchScreen(
             apiService: apiService,
             locationService: locationService,
+            authService: authService,
             initialCategory: option.value,
           ),
         ),

@@ -436,7 +436,7 @@ class _DetailScreenState extends State<DetailScreen> {
           children: [
             Icon(icon, size: 18, color: AppColors.brightBlue),
             const SizedBox(width: 10),
-            Column(
+            Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
@@ -454,7 +454,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                 ),
               ],
-            ),
+            )),
           ],
         ),
       ),

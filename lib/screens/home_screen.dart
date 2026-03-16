@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/app_menu.dart';
 import '../models/category.dart' as models;
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../services/bookmark_service.dart';
 import '../services/location_service.dart';
 import '../theme.dart';
 import 'search_screen.dart';
@@ -27,6 +30,8 @@ const _categoryEmojis = {
 class HomeScreen extends StatefulWidget {
   final ApiService apiService;
   final LocationService locationService;
+  final AuthService? authService;
+  final BookmarkService? bookmarkService;
   final ValueChanged<int>? onSwitchTab;
   final VoidCallback? onOpenAccount;
 
@@ -34,6 +39,8 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.apiService,
     required this.locationService,
+    this.authService,
+    this.bookmarkService,
     this.onSwitchTab,
     this.onOpenAccount,
   });
@@ -103,6 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => SearchScreen(
           apiService: widget.apiService,
           locationService: widget.locationService,
+          authService: widget.authService,
+          bookmarkService: widget.bookmarkService,
           initialQuery: query,
         ),
       ),
@@ -116,6 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => SearchScreen(
           apiService: widget.apiService,
           locationService: widget.locationService,
+          authService: widget.authService,
+          bookmarkService: widget.bookmarkService,
           initialCategory: category.slug,
         ),
       ),
@@ -303,85 +314,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showMobileMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0A2F57),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(40),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _menuItem(ctx, 'Home', onAction: () {
-                Navigator.pop(ctx);
-                widget.onSwitchTab?.call(0);
-              }, isActive: true),
-              _menuItem(ctx, 'Guided Help', onAction: () {
-                Navigator.pop(ctx);
-                widget.onSwitchTab?.call(2);
-              }),
-              _menuItem(ctx, 'Blog', onAction: () {
-                Navigator.pop(ctx);
-                widget.onSwitchTab?.call(3);
-              }),
-              _menuItem(ctx, 'Crisis', color: const Color(0xFFEF9A9A),
-                  onAction: () {
-                Navigator.pop(ctx);
-                launchUrl(Uri.parse('tel:988'));
-              }),
-              Divider(color: Colors.white.withAlpha(26), height: 24),
-              _menuItem(ctx, 'Sign In', onAction: () {
-                Navigator.pop(ctx);
-                widget.onOpenAccount?.call();
-              }),
-              _menuItem(ctx, 'Create Account',
-                  color: const Color(0xFF7AB8E8), onAction: () {
-                Navigator.pop(ctx);
-                widget.onOpenAccount?.call();
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _menuItem(BuildContext ctx, String label,
-      {bool isActive = false, Color? color, VoidCallback? onAction}) {
-    return GestureDetector(
-      onTap: onAction ?? () => Navigator.pop(ctx),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'DMSans',
-            fontSize: 14,
-            color: color ?? Colors.white.withAlpha(179),
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
+    showAppMenu(
+      context,
+      onNavigate: (route) {
+        switch (route) {
+          case 'home':
+            widget.onSwitchTab?.call(0);
+            break;
+          case 'login':
+          case 'register':
+          case 'account':
+            widget.onOpenAccount?.call();
+            break;
+        }
+      },
+      authService: widget.authService,
     );
   }
 
