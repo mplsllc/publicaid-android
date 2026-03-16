@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/category.dart' as models;
 import '../services/api_service.dart';
@@ -132,13 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFE8F0FA),
       body: RefreshIndicator(
         onRefresh: _loadCategories,
@@ -262,7 +255,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    ),
     );
   }
 
