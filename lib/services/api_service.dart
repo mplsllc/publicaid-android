@@ -127,7 +127,9 @@ class ApiService {
   // Get entity services
   Future<List<EntityService>> getEntityServices(String id) async {
     final json = await _get('entities/$id/services');
-    return (json['data'] as List<dynamic>)
+    final data = json['data'];
+    if (data == null || data is! List) return [];
+    return data
         .map((e) => EntityService.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -135,7 +137,9 @@ class ApiService {
   // Get entity hours
   Future<List<EntityHours>> getEntityHours(String id) async {
     final json = await _get('entities/$id/hours');
-    return (json['data'] as List<dynamic>)
+    final data = json['data'];
+    if (data == null || data is! List) return [];
+    return data
         .map((e) => EntityHours.fromJson(e as Map<String, dynamic>))
         .toList();
   }

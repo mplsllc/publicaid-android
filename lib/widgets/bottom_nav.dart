@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,10 +17,11 @@ class AppBottomNav extends StatelessWidget {
 
   void _handleTap(int index) {
     if (index == 3) {
-      // Blog — open in browser
+      // Blog — same tab on web, in-app browser on mobile
       launchUrl(
         Uri.parse('https://publicaid.org/blog'),
-        mode: LaunchMode.externalApplication,
+        mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.inAppBrowserView,
+        webOnlyWindowName: kIsWeb ? '_self' : null,
       );
       return;
     }
@@ -28,18 +30,24 @@ class AppBottomNav extends StatelessWidget {
       launchUrl(Uri.parse('tel:988'));
       return;
     }
-    // Home (0), Search (1), Get Help (2) are real tabs
     onTap(index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
+        border: const Border(
           top: BorderSide(color: Color(0xFFE2ECF7), width: 1),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0D3B6E).withAlpha(18),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -51,8 +59,9 @@ class AppBottomNav extends StatelessWidget {
               _buildTab(0, Icons.home_outlined, Icons.home, 'Home'),
               _buildTab(1, Icons.search, Icons.search, 'Search'),
               _buildTab(
-                  2, Icons.help_outline, Icons.help_outline, 'Get Help'),
-              _buildTab(3, Icons.article_outlined, Icons.article, 'Blog'),
+                  2, Icons.help_outline, Icons.help, 'Get Help'),
+              _buildTab(
+                  3, Icons.menu_book_outlined, Icons.menu_book, 'Blog'),
               _buildTab(4, Icons.phone_outlined, Icons.phone, 'Crisis'),
             ],
           ),
@@ -77,7 +86,7 @@ class AppBottomNav extends StatelessWidget {
             Icon(
               isActive ? activeIcon : icon,
               color: color,
-              size: 24,
+              size: 22,
             ),
             const SizedBox(height: 2),
             Text(
@@ -90,7 +99,6 @@ class AppBottomNav extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            // Dot indicator for active tab
             Container(
               width: 4,
               height: 4,

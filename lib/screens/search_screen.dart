@@ -455,6 +455,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return ListView.builder(
       controller: _scrollController,
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       padding: const EdgeInsets.only(top: 8, bottom: 24),
       itemCount: _results.length + (_loadingMore ? 1 : 0),
       itemBuilder: (context, index) {

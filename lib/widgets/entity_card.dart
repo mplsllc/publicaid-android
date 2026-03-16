@@ -19,7 +19,9 @@ class EntityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -333,6 +335,7 @@ class EntityCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

@@ -6,7 +6,8 @@ import 'services/bookmark_service.dart';
 import 'services/location_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
-import 'screens/categories_screen.dart';
+import 'screens/guide_screen.dart';
+import 'screens/account_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
 
@@ -91,14 +92,9 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Publicaid',
-              style: TextStyle(
-                fontFamily: 'InstrumentSerif',
-                fontSize: 36,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
+            Image.asset(
+              'assets/images/logo-light.png',
+              height: 40,
             ),
             const SizedBox(height: 24),
             const SizedBox(
@@ -145,24 +141,41 @@ class _AppShellState extends State<_AppShell> {
       HomeScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
+        onSwitchTab: (index) => setState(() => _currentIndex = index),
+        onOpenAccount: _openAccountScreen,
       ),
       SearchScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
       ),
-      CategoriesScreen(
+      GuideScreen(
         apiService: widget.apiService,
         locationService: widget.locationService,
       ),
     ];
   }
 
+  void _openAccountScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AccountScreen(
+          authService: widget.authService,
+          apiService: widget.apiService,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: IndexedStack(
+          key: ValueKey(_currentIndex),
+          index: _currentIndex,
+          children: _screens,
+        ),
       ),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,

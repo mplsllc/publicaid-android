@@ -59,9 +59,10 @@ class _DetailScreenState extends State<DetailScreen> {
         });
       }
     } catch (e) {
+      debugPrint('DetailScreen error loading ${widget.entityId}: $e');
       if (mounted) {
         setState(() {
-          _error = 'Could not load details. Please try again.';
+          _error = 'Could not load details: $e';
           _loading = false;
         });
       }
@@ -153,6 +154,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _buildContent() {
     final e = _entity!;
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
