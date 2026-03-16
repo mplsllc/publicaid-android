@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Login failed. Please try again.';
+          _error = 'Login failed: $e';
           _loading = false;
         });
       }
