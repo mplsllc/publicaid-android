@@ -98,18 +98,8 @@ class GuideScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.lightBg,
       appBar: AppBar(
-        title: const Text(
-          'Guided Help',
-          style: TextStyle(
-            fontFamily: 'InstrumentSerif',
-            fontSize: 20,
-            color: Colors.white,
-            letterSpacing: -0.3,
-          ),
-        ),
-        backgroundColor: AppColors.navyBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: const Text('Guided Help'),
+        automaticallyImplyLeading: false,
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(

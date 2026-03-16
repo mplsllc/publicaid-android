@@ -138,17 +138,8 @@ class _BlogScreenState extends State<BlogScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE8F0FA),
       appBar: AppBar(
-        title: const Text(
-          'Blog',
-          style: TextStyle(
-            fontFamily: 'DMSans',
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        backgroundColor: AppColors.navyBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: const Text('Blog'),
+        automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
         onRefresh: () => _loadArticles(topic: _selectedTopic, page: _page),
@@ -593,17 +584,9 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
       appBar: AppBar(
         title: Text(
           _article?['title'] as String? ?? widget.title,
-          style: const TextStyle(
-            fontFamily: 'DMSans',
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        backgroundColor: AppColors.navyBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
