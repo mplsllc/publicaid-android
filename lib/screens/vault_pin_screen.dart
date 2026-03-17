@@ -443,6 +443,46 @@ class _VaultPinScreenState extends State<VaultPinScreen>
             ),
           ),
 
+          // "Start Fresh" option (recovery only — for stale/forgotten vaults)
+          if (!isSetup) ...[
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Start Fresh?'),
+                    content: const Text(
+                      'This will delete all documents in your vault and start over. This cannot be undone.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('Delete & Start Fresh'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  setState(() => _mode = _VaultMode.setup);
+                }
+              },
+              child: Text(
+                "Can't remember? Start fresh",
+                style: TextStyle(
+                  fontFamily: 'DMSans',
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+          ],
+
           // Recovery note (setup only)
           if (isSetup) ...[
             const SizedBox(height: 24),
