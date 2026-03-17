@@ -33,6 +33,7 @@ dependencies:
   pointycastle: ^4.0.0
   flutter_local_notifications: ^21.0.0
   app_links: ^7.0.0
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/vault_service.dart';
 import '../theme.dart';
 import 'vault_note_screen.dart';
@@ -116,9 +118,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
         ),
       ).then((_) => _loadDocuments());
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File viewing coming soon')),
-      );
+      _viewFile(doc);
     }
   }
 
@@ -149,19 +149,84 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
             ListTile(
               leading: Icon(Icons.photo_camera_outlined,
                   color: AppColors.accent(context)),
-              title: Text('Add Photo',
+              title: Text('Take Photo',
                   style: TextStyle(color: AppColors.text(context))),
               onTap: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Photo capture coming soon')),
-                );
+                _pickAndUploadImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library_outlined,
+                  color: AppColors.accent(context)),
+              title: Text('Choose from Gallery',
+                  style: TextStyle(color: AppColors.text(context))),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadImage(ImageSource.gallery);
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: source, imageQuality: 85);
+      if (picked == null) return;
+
+      final bytes = await picked.readAsBytes();
+      final title = picked.name.isNotEmpty ? picked.name : 'Photo ${DateTime.now().toIso8601String().substring(0, 10)}';
+
+      setState(() => _loading = true);
+      await widget.vaultService.addFile(title, bytes);
+      _loadDocuments();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$title saved'), backgroundColor: AppColors.greenAccent),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not save photo')),
+        );
+      }
+    }
+  }
+
+  Future<void> _viewFile(Map<String, dynamic> doc) async {
+    final id = doc['id'] as String;
+    setState(() => _loading = true);
+
+    try {
+      final decryptedBytes = await widget.vaultService.downloadFile(id);
+      setState(() => _loading = false);
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _VaultFileViewer(
+            title: doc['title'] as String? ?? 'File',
+            bytes: decryptedBytes,
+          ),
+        ),
+      );
+    } catch (e) {
+      setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open file')),
+        );
+      }
+    }
   }
 
   String _formatBytes(int bytes) {
@@ -377,6 +442,64 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _VaultFileViewer extends StatefulWidget {
+  final String title;
+  final Uint8List bytes;
+
+  const _VaultFileViewer({required this.title, required this.bytes});
+
+  @override
+  State<_VaultFileViewer> createState() => _VaultFileViewerState();
+}
+
+class _VaultFileViewerState extends State<_VaultFileViewer> {
+  static const _secureChannel = MethodChannel('org.publicaid.app/secure');
+
+  @override
+  void initState() {
+    super.initState();
+    _secureChannel.invokeMethod('setSecure', true);
+  }
+
+  @override
+  void dispose() {
+    _secureChannel.invokeMethod('setSecure', false);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(widget.title),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4.0,
+          child: Image.memory(
+            widget.bytes,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.broken_image_outlined,
+                    size: 64, color: AppColors.muted(context)),
+                const SizedBox(height: 12),
+                Text('Unable to display this file',
+                    style: TextStyle(color: AppColors.muted(context))),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
