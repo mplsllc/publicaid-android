@@ -56,26 +56,52 @@ class _DetailScreenState extends State<DetailScreen> {
     });
 
     try {
-      // Load sequentially to avoid rate limiting
-      final entity = await widget.apiService.getEntity(widget.entityId);
-      final services = await widget.apiService.getEntityServices(widget.entityId);
-      final hours = await widget.apiService.getEntityHours(widget.entityId);
+      // Load in parallel for speed
+      final results = await Future.wait([
+        widget.apiService.getEntity(widget.entityId),
+        widget.apiService.getEntityServices(widget.entityId),
+        widget.apiService.getEntityHours(widget.entityId),
+      ]);
 
       if (mounted) {
         setState(() {
-          _entity = entity;
-          _services = services;
-          _hours = hours;
+          _entity = results[0] as Entity;
+          _services = results[1] as List<EntityService>;
+          _hours = results[2] as List<EntityHours>;
           _loading = false;
           _retryCount = 0;
         });
       }
+    } on ApiException catch (e) {
+      if (kDebugMode) debugPrint('DetailScreen error loading ${widget.entityId}: $e');
+      // Don't retry on rate limit — wait longer
+      if (e.statusCode == 429) {
+        if (mounted) {
+          setState(() {
+            _error = 'Too many requests. Please wait a moment and try again.';
+            _loading = false;
+          });
+        }
+        return;
+      }
+      // Auto-retry once on other errors
+      if (_retryCount < 1 && mounted) {
+        _retryCount++;
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) _loadData();
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _error = 'Could not load details. Tap to retry.';
+          _loading = false;
+        });
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('DetailScreen error loading ${widget.entityId}: $e');
-      // Auto-retry up to 3 times with backoff
-      if (_retryCount < 3 && mounted) {
+      if (_retryCount < 1 && mounted) {
         _retryCount++;
-        await Future.delayed(Duration(milliseconds: 500 * _retryCount));
+        await Future.delayed(const Duration(seconds: 2));
         if (mounted) _loadData();
         return;
       }
