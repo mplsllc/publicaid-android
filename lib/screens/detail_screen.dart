@@ -160,9 +160,9 @@ class _DetailScreenState extends State<DetailScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Visit logged!'),
-            backgroundColor: AppColors.greenAccent,
+          SnackBar(
+            content: const Text('Visit logged!'),
+            backgroundColor: AppColors.greenTextOf(context),
           ),
         );
       }
@@ -231,11 +231,11 @@ class _DetailScreenState extends State<DetailScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.mediumGray),
+                      Icon(Icons.error_outline,
+                          size: 48, color: AppColors.muted(context)),
                       const SizedBox(height: 8),
                       Text(_error!,
-                          style: const TextStyle(color: AppColors.grayText)),
+                          style: TextStyle(color: AppColors.muted(context))),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: _loadData,
@@ -281,13 +281,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   icon: Icon(
                     isBookmarked ? Icons.bookmark : Icons.bookmark_border,
                     size: 18,
-                    color: isBookmarked ? AppColors.brightBlue : null,
+                    color: isBookmarked ? AppColors.accent(context) : null,
                   ),
                   label: Text(isBookmarked ? 'Saved' : 'Save'),
                   style: isBookmarked
                       ? OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.brightBlue),
-                          foregroundColor: AppColors.brightBlue,
+                          side: BorderSide(color: AppColors.accent(context)),
+                          foregroundColor: AppColors.accent(context),
                         )
                       : null,
                 ),
@@ -311,12 +311,12 @@ class _DetailScreenState extends State<DetailScreen> {
                   icon: Icon(
                     Icons.check_circle_outline,
                     size: 18,
-                    color: AppColors.greenAccent,
+                    color: AppColors.greenTextOf(context),
                   ),
                   label: Text(_checkingIn ? 'Logging...' : 'I Visited'),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.greenAccent),
-                    foregroundColor: AppColors.greenAccent,
+                    side: BorderSide(color: AppColors.greenTextOf(context)),
+                    foregroundColor: AppColors.greenTextOf(context),
                   ),
                 ),
                 OutlinedButton.icon(
@@ -337,18 +337,18 @@ class _DetailScreenState extends State<DetailScreen> {
           // Description
           if (e.description != null && e.description!.isNotEmpty) ...[
             const SizedBox(height: 20),
-            const Text('About',
+            Text('About',
                 style: TextStyle(
                     fontFamily: 'InstrumentSerif',
                     fontSize: 20,
-                    color: AppColors.navyBlue)),
+                    color: AppColors.text(context))),
             const SizedBox(height: 8),
             Text(
               e.description!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 14,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
                 height: 1.5,
               ),
             ),
@@ -365,16 +365,16 @@ class _DetailScreenState extends State<DetailScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on_outlined,
-                      size: 18, color: AppColors.grayText),
+                  Icon(Icons.location_on_outlined,
+                      size: 18, color: AppColors.muted(context)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       e.fullAddress,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 14,
-                        color: AppColors.navyBlue,
+                        color: AppColors.text(context),
                       ),
                     ),
                   ),
@@ -394,11 +394,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       children: [
                         Text(
                           h.dayName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.navyBlue,
+                            color: AppColors.text(context),
                           ),
                         ),
                         Text(
@@ -406,7 +406,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 14,
-                            color: h.closed ? Colors.red : AppColors.grayText,
+                            color: h.closed ? Colors.red : AppColors.muted(context),
                           ),
                         ),
                       ],
@@ -424,8 +424,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.check_circle_outline,
-                            size: 18, color: AppColors.greenAccent),
+                        Icon(Icons.check_circle_outline,
+                            size: 18, color: AppColors.greenTextOf(context)),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -433,21 +433,21 @@ class _DetailScreenState extends State<DetailScreen> {
                             children: [
                               Text(
                                 s.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'DMSans',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.navyBlue,
+                                  color: AppColors.text(context),
                                 ),
                               ),
                               if (s.description != null &&
                                   s.description!.isNotEmpty)
                                 Text(
                                   s.description!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'DMSans',
                                     fontSize: 13,
-                                    color: AppColors.grayText,
+                                    color: AppColors.muted(context),
                                   ),
                                 ),
                             ],
@@ -504,11 +504,11 @@ class _DetailScreenState extends State<DetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Contact',
+            Text('Contact',
                 style: TextStyle(
                     fontFamily: 'InstrumentSerif',
                     fontSize: 18,
-                    color: AppColors.navyBlue)),
+                    color: AppColors.text(context))),
             const SizedBox(height: 12),
             if (e.phone != null && e.phone!.isNotEmpty)
               _contactRow(Icons.phone, 'Phone', e.phone!,
@@ -533,23 +533,23 @@ class _DetailScreenState extends State<DetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppColors.brightBlue),
+            Icon(icon, size: 18, color: AppColors.accent(context)),
             const SizedBox(width: 10),
             Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 12,
-                        color: AppColors.grayText)),
+                        color: AppColors.muted(context))),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.brightBlue,
+                    color: AppColors.accent(context),
                   ),
                 ),
               ],
@@ -568,10 +568,10 @@ class _DetailScreenState extends State<DetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title,
-                style: const TextStyle(
+                style: TextStyle(
                     fontFamily: 'InstrumentSerif',
                     fontSize: 18,
-                    color: AppColors.navyBlue)),
+                    color: AppColors.text(context))),
             const SizedBox(height: 10),
             ...children,
           ],
@@ -611,21 +611,21 @@ class _DetailScreenState extends State<DetailScreen> {
             width: 130,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.grayText,
+                color: AppColors.muted(context),
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 13,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
               ),
             ),
           ),
@@ -638,12 +638,12 @@ class _DetailScreenState extends State<DetailScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: dq.isVerified ? AppColors.greenBg : AppColors.heroBg,
+        color: dq.isVerified ? AppColors.greenBgOf(context) : AppColors.heroBgOf(context),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: dq.isVerified
-              ? AppColors.greenAccent.withAlpha(50)
-              : AppColors.cardBorder,
+              ? AppColors.greenTextOf(context).withAlpha(50)
+              : AppColors.cardBorderOf(context),
         ),
       ),
       child: Row(
@@ -651,7 +651,7 @@ class _DetailScreenState extends State<DetailScreen> {
           Icon(
             dq.isVerified ? Icons.verified : Icons.info_outline,
             size: 18,
-            color: dq.isVerified ? AppColors.greenAccent : AppColors.grayText,
+            color: dq.isVerified ? AppColors.greenTextOf(context) : AppColors.muted(context),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -665,26 +665,26 @@ class _DetailScreenState extends State<DetailScreen> {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: dq.isVerified
-                        ? AppColors.greenAccent
-                        : AppColors.navyBlue,
+                        ? AppColors.greenTextOf(context)
+                        : AppColors.text(context),
                   ),
                 ),
                 if (dq.lastVerifiedAt != null)
                   Text(
                     'Last verified: ${dq.lastVerifiedAt}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                 if (dq.sourceCount != null)
                   Text(
                     '${dq.sourceCount} data source${dq.sourceCount == 1 ? '' : 's'}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
               ],

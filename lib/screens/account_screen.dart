@@ -119,29 +119,29 @@ class _AccountScreenState extends State<AccountScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.heroBg,
+                color: AppColors.heroBgOf(context),
                 borderRadius: BorderRadius.circular(32),
               ),
-              child: const Icon(Icons.person,
-                  size: 32, color: AppColors.brightBlue),
+              child: Icon(Icons.person,
+                  size: 32, color: AppColors.accent(context)),
             ),
             const SizedBox(height: 12),
             if (user?.name != null && user!.name!.isNotEmpty)
               Text(
                 user.name!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.navyBlue,
+                  color: AppColors.text(context),
                 ),
               ),
             Text(
               user?.email ?? '',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 14,
-                color: AppColors.grayText,
+                color: AppColors.muted(context),
               ),
             ),
             const SizedBox(height: 20),
@@ -175,22 +175,22 @@ class _AccountScreenState extends State<AccountScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Saved',
                   style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1,
-                    color: AppColors.mediumGray,
+                    color: AppColors.muted(context),
                   ),
                 ),
                 Text(
                   '${_saved.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
-                    color: AppColors.mediumGray,
+                    color: AppColors.muted(context),
                   ),
                 ),
               ],
@@ -206,21 +206,21 @@ class _AccountScreenState extends State<AccountScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2)),
               ))
             else if (_saved.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'No saved services yet. Tap the Save button on any listing.',
                   style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 13,
-                    color: AppColors.grayText,
+                    color: AppColors.muted(context),
                   ),
                 ),
               )
             else
               ...(_saved.map((item) => _buildListItem(
                     icon: Icons.bookmark,
-                    iconColor: AppColors.brightBlue,
+                    iconColor: AppColors.accent(context),
                     item: item,
                   ))),
           ],
@@ -239,22 +239,22 @@ class _AccountScreenState extends State<AccountScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Supporting',
                   style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1,
-                    color: AppColors.mediumGray,
+                    color: AppColors.muted(context),
                   ),
                 ),
                 Text(
                   '${_supported.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
-                    color: AppColors.mediumGray,
+                    color: AppColors.muted(context),
                   ),
                 ),
               ],
@@ -270,14 +270,14 @@ class _AccountScreenState extends State<AccountScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2)),
               ))
             else if (_supported.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'No supported organizations yet. Tap "I Support" on any listing.',
                   style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 13,
-                    color: AppColors.grayText,
+                    color: AppColors.muted(context),
                   ),
                 ),
               )
@@ -309,11 +309,11 @@ class _AccountScreenState extends State<AccountScreen> {
               children: [
                 Text(
                   item.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.navyBlue,
+                    color: AppColors.text(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -321,10 +321,10 @@ class _AccountScreenState extends State<AccountScreen> {
                 if (item.city != null || item.state != null)
                   Text(
                     [item.city, item.state].where((s) => s != null).join(', '),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
               ],
@@ -345,30 +345,30 @@ class _AccountScreenState extends State<AccountScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.heroBg,
+                color: AppColors.heroBgOf(context),
                 borderRadius: BorderRadius.circular(28),
               ),
-              child: const Icon(Icons.person_outline,
-                  size: 28, color: AppColors.brightBlue),
+              child: Icon(Icons.person_outline,
+                  size: 28, color: AppColors.accent(context)),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Sign in to sync your bookmarks',
               style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Create an account to save services across devices',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 14,
-                color: AppColors.grayText,
+                color: AppColors.muted(context),
               ),
             ),
             const SizedBox(height: 20),
@@ -430,16 +430,16 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                 );
               },
-              leading: const Icon(Icons.checklist, color: AppColors.brightBlue, size: 22),
-              title: const Text(
+              leading: Icon(Icons.checklist, color: AppColors.accent(context), size: 22),
+              title: Text(
                 'My Plan',
                 style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 15,
-                  color: AppColors.navyBlue,
+                  color: AppColors.text(context),
                 ),
               ),
-              trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.mediumGray),
+              trailing: Icon(Icons.chevron_right, size: 18, color: AppColors.muted(context)),
             ),
           if (widget.planService != null)
             const Divider(height: 1),
@@ -485,17 +485,17 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget _linkTile(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: AppColors.brightBlue, size: 22),
+      leading: Icon(icon, color: AppColors.accent(context), size: 22),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'DMSans',
           fontSize: 15,
-          color: AppColors.navyBlue,
+          color: AppColors.text(context),
         ),
       ),
       trailing:
-          const Icon(Icons.open_in_new, size: 18, color: AppColors.mediumGray),
+          Icon(Icons.open_in_new, size: 18, color: AppColors.muted(context)),
     );
   }
 
