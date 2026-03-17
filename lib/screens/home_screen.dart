@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/bookmark_service.dart';
 import '../services/location_service.dart';
+import '../services/plan_service.dart';
 import '../theme.dart';
 import 'search_screen.dart';
 
@@ -31,6 +32,7 @@ class HomeScreen extends StatefulWidget {
   final LocationService locationService;
   final AuthService? authService;
   final BookmarkService? bookmarkService;
+  final PlanService? planService;
   final ValueChanged<int>? onSwitchTab;
   final VoidCallback? onOpenAccount;
 
@@ -40,6 +42,7 @@ class HomeScreen extends StatefulWidget {
     required this.locationService,
     this.authService,
     this.bookmarkService,
+    this.planService,
     this.onSwitchTab,
     this.onOpenAccount,
   });
@@ -111,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
           locationService: widget.locationService,
           authService: widget.authService,
           bookmarkService: widget.bookmarkService,
+          planService: widget.planService,
           initialQuery: query,
         ),
       ),
@@ -126,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
           locationService: widget.locationService,
           authService: widget.authService,
           bookmarkService: widget.bookmarkService,
+          planService: widget.planService,
           initialCategory: category.slug,
         ),
       ),

@@ -4,15 +4,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
+import 'notification_service.dart';
 
 class BookmarkService extends ChangeNotifier {
   final ApiService _api;
   final AuthService _auth;
+  NotificationService? _notificationService;
   Set<String> _bookmarkedIds = {};
   List<BookmarkItem> _bookmarks = [];
   bool _loading = false;
 
   BookmarkService(this._api, this._auth);
+
+  void setNotificationService(NotificationService svc) {
+    _notificationService = svc;
+  }
 
   Set<String> get bookmarkedIds => _bookmarkedIds;
   List<BookmarkItem> get bookmarks => _bookmarks;
@@ -73,7 +79,7 @@ class BookmarkService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> toggleBookmark(String entityId, {String? name, String? city, String? state, String? phone, String? categoryName}) async {
+  Future<bool> toggleBookmark(String entityId, {String? name, String? city, String? state, String? phone, String? categoryName, String? addressLine1, String? addressLine2, String? zip, String? description, String? website, double? lat, double? lng, String? slug}) async {
     final wasBookmarked = _bookmarkedIds.contains(entityId);
 
     // Optimistic update
@@ -85,15 +91,30 @@ class BookmarkService extends ChangeNotifier {
       _bookmarks.add(BookmarkItem(
         entityId: entityId,
         name: name ?? 'Unknown',
+        slug: slug,
         city: city,
         state: state,
         phone: phone,
         categoryName: categoryName,
         savedAt: DateTime.now().toIso8601String(),
+        addressLine1: addressLine1,
+        addressLine2: addressLine2,
+        zip: zip,
+        description: description,
+        website: website,
+        lat: lat,
+        lng: lng,
       ));
     }
     notifyListeners();
     await _saveLocal();
+
+    // FCM topic subscription
+    if (wasBookmarked) {
+      _notificationService?.unsubscribeFromEntity(entityId);
+    } else {
+      _notificationService?.subscribeToEntity(entityId);
+    }
 
     // Sync with server if logged in
     if (_auth.isLoggedIn) {

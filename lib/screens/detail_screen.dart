@@ -6,6 +6,7 @@ import '../models/entity.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/bookmark_service.dart';
+import '../services/plan_service.dart';
 import '../theme.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class DetailScreen extends StatefulWidget {
   final String entityName;
   final BookmarkService? bookmarkService;
   final AuthService? authService;
+  final PlanService? planService;
 
   const DetailScreen({
     super.key,
@@ -22,6 +24,7 @@ class DetailScreen extends StatefulWidget {
     required this.entityName,
     this.bookmarkService,
     this.authService,
+    this.planService,
   });
 
   @override
@@ -36,6 +39,7 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _error;
   bool _isSupporting = false;
   bool _savingSupport = false;
+  bool _checkingIn = false;
 
   @override
   void initState() {
@@ -90,10 +94,18 @@ class _DetailScreenState extends State<DetailScreen> {
     widget.bookmarkService!.toggleBookmark(
       e.id,
       name: e.name,
+      slug: e.slug,
       city: e.city,
       state: e.state,
       phone: e.phone,
       categoryName: e.categories.isNotEmpty ? e.categories.first.name : null,
+      addressLine1: e.addressLine1,
+      addressLine2: e.addressLine2,
+      zip: e.zip,
+      description: e.description,
+      website: e.website,
+      lat: e.lat,
+      lng: e.lng,
     );
     setState(() {}); // Rebuild to reflect bookmark state
   }
@@ -106,6 +118,63 @@ class _DetailScreenState extends State<DetailScreen> {
       if (mounted) setState(() => _isSupporting = result);
     } catch (_) {}
     if (mounted) setState(() => _savingSupport = false);
+  }
+
+  Future<void> _addCheckin() async {
+    if (widget.authService == null || !widget.authService!.isLoggedIn) return;
+
+    final noteController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log a Visit'),
+        content: TextField(
+          controller: noteController,
+          decoration: const InputDecoration(
+            hintText: 'Add a note (optional)',
+          ),
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Log Visit'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _checkingIn = true);
+    try {
+      final note = noteController.text.trim();
+      await widget.apiService.addCheckin(
+        widget.entityId,
+        note: note.isNotEmpty ? note : null,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Visit logged!'),
+            backgroundColor: AppColors.greenAccent,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not log visit. Try again.')),
+        );
+      }
+    }
+    if (mounted) setState(() => _checkingIn = false);
+    noteController.dispose();
   }
 
   void _openDirections() {
@@ -236,6 +305,30 @@ class _DetailScreenState extends State<DetailScreen> {
                           foregroundColor: Colors.red,
                         )
                       : null,
+                ),
+                OutlinedButton.icon(
+                  onPressed: _checkingIn ? null : _addCheckin,
+                  icon: Icon(
+                    Icons.check_circle_outline,
+                    size: 18,
+                    color: AppColors.greenAccent,
+                  ),
+                  label: Text(_checkingIn ? 'Logging...' : 'I Visited'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.greenAccent),
+                    foregroundColor: AppColors.greenAccent,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    if (widget.planService == null) return;
+                    final e = _entity!;
+                    if (widget.planService!.isInPlan(e.id)) return;
+                    widget.planService!.addToPlan(e.id, entityName: e.name, city: e.city, state: e.state, phone: e.phone, addressLine1: e.addressLine1);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to your plan!')));
+                  },
+                  icon: Icon(widget.planService?.isInPlan(widget.entityId) == true ? Icons.check : Icons.add_task, size: 18),
+                  label: Text(widget.planService?.isInPlan(widget.entityId) == true ? 'In Plan' : 'Add to Plan'),
                 ),
               ],
             ],

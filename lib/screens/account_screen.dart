@@ -3,7 +3,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/auth.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../services/plan_service.dart';
+import '../services/vault_service.dart';
 import '../theme.dart';
+import 'plan_screen.dart';
+import 'vault_pin_screen.dart';
 import '../widgets/app_menu.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
@@ -11,12 +15,16 @@ import 'register_screen.dart';
 class AccountScreen extends StatefulWidget {
   final AuthService authService;
   final ApiService apiService;
+  final PlanService? planService;
+  final VaultService? vaultService;
   final void Function(String)? onNavigate;
 
   const AccountScreen({
     super.key,
     required this.authService,
     required this.apiService,
+    this.planService,
+    this.vaultService,
     this.onNavigate,
   });
 
@@ -409,6 +417,49 @@ class _AccountScreenState extends State<AccountScreen> {
     return Card(
       child: Column(
         children: [
+          if (widget.planService != null)
+            ListTile(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlanScreen(
+                      planService: widget.planService!,
+                      apiService: widget.apiService,
+                    ),
+                  ),
+                );
+              },
+              leading: const Icon(Icons.checklist, color: AppColors.brightBlue, size: 22),
+              title: const Text(
+                'My Plan',
+                style: TextStyle(
+                  fontFamily: 'DMSans',
+                  fontSize: 15,
+                  color: AppColors.navyBlue,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.mediumGray),
+            ),
+          if (widget.planService != null)
+            const Divider(height: 1),
+          _linkTile(
+            Icons.folder_outlined,
+            'Documents',
+            () {
+              if (widget.vaultService != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => VaultPinScreen(
+                      vaultService: widget.vaultService!,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+          const Divider(height: 1),
           _linkTile(
             Icons.info_outline,
             'About Publicaid',

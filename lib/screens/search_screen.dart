@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/bookmark_service.dart';
 import '../services/location_service.dart';
+import '../services/plan_service.dart';
 import '../theme.dart';
 import '../widgets/entity_card.dart';
 import 'detail_screen.dart';
@@ -13,6 +14,7 @@ class SearchScreen extends StatefulWidget {
   final LocationService locationService;
   final AuthService? authService;
   final BookmarkService? bookmarkService;
+  final PlanService? planService;
   final String? initialQuery;
   final String? initialCategory;
 
@@ -22,6 +24,7 @@ class SearchScreen extends StatefulWidget {
     required this.locationService,
     this.authService,
     this.bookmarkService,
+    this.planService,
     this.initialQuery,
     this.initialCategory,
   });
@@ -232,6 +235,7 @@ class _SearchScreenState extends State<SearchScreen> {
           entityName: entity.name,
           authService: widget.authService,
           bookmarkService: widget.bookmarkService,
+          planService: widget.planService,
         ),
       ),
     );
@@ -492,12 +496,20 @@ class _SearchScreenState extends State<SearchScreen> {
               ? () => widget.bookmarkService!.toggleBookmark(
                     entity.id,
                     name: entity.name,
+                    slug: entity.slug,
                     city: entity.city,
                     state: entity.state,
                     phone: entity.phone,
                     categoryName: entity.categories.isNotEmpty
                         ? entity.categories.first.name
                         : null,
+                    addressLine1: entity.addressLine1,
+                    addressLine2: entity.addressLine2,
+                    zip: entity.zip,
+                    description: entity.description,
+                    website: entity.website,
+                    lat: entity.lat,
+                    lng: entity.lng,
                   )
               : null,
         );

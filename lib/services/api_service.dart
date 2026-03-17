@@ -4,6 +4,8 @@ import '../models/entity.dart';
 import '../models/category.dart';
 import '../models/api_response.dart';
 import '../models/auth.dart';
+import '../models/checkin.dart';
+import '../models/plan.dart';
 
 class ApiService {
   static const String baseUrl = 'https://publicaid.org/api/v1';
@@ -174,6 +176,26 @@ class ApiService {
     throw ApiException(response.statusCode, _parseErrorMessage(response.body));
   }
 
+  Future<Map<String, dynamic>> _userPut(String path,
+      {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$_userBaseUrl/$path');
+    final response = await http.put(uri, headers: _headers,
+        body: body != null ? json.encode(body) : null);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    }
+    throw ApiException(response.statusCode, _parseErrorMessage(response.body));
+  }
+
+  Future<Map<String, dynamic>> _userDelete(String path) async {
+    final uri = Uri.parse('$_userBaseUrl/$path');
+    final response = await http.delete(uri, headers: _headers);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    }
+    throw ApiException(response.statusCode, _parseErrorMessage(response.body));
+  }
+
   // Auth: Login
   Future<Map<String, dynamic>> login(String email, String password,
       {String? altcha, String? totpCode}) async {
@@ -232,6 +254,54 @@ class ApiService {
     return data
         .map((e) => BookmarkItem.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  // Checkins: Add
+  Future<void> addCheckin(String entityId, {String? note}) async {
+    final body = <String, dynamic>{};
+    if (note != null && note.isNotEmpty) body['note'] = note;
+    await _userPost('checkins/$entityId', body: body.isNotEmpty ? body : null);
+  }
+
+  // Checkins: List
+  Future<List<CheckinItem>> getCheckins(String entityId) async {
+    final json = await _userGet('checkins/$entityId');
+    final data = json['data'];
+    if (data == null || data is! List) return [];
+    return data
+        .map((e) => CheckinItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Plan: List
+  Future<List<PlanItem>> getPlan() async {
+    final json = await _userGet('plan');
+    final data = json['data'];
+    if (data == null || data is! List) return [];
+    return data
+        .map((e) => PlanItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Plan: Add
+  Future<String> addToPlan(String entityId) async {
+    final json = await _userPost('plan/$entityId');
+    return (json['data'] as Map<String, dynamic>)['id'].toString();
+  }
+
+  // Plan: Update
+  Future<void> updatePlanItem(String itemId, {required String notes, required bool completed}) async {
+    await _userPut('plan/$itemId', body: {'notes': notes, 'completed': completed});
+  }
+
+  // Plan: Delete
+  Future<void> deletePlanItem(String itemId) async {
+    await _userDelete('plan/$itemId');
+  }
+
+  // Plan: Reorder
+  Future<void> reorderPlan(List<String> itemIds) async {
+    await _userPut('plan/order', body: {'item_ids': itemIds});
   }
 
   // Support: Toggle

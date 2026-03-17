@@ -3,6 +3,10 @@ import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/bookmark_service.dart';
 import 'services/location_service.dart';
+import 'services/plan_service.dart';
+import 'services/vault_service.dart';
+import 'services/notification_service.dart';
+import 'screens/plan_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/guide_screen.dart';
@@ -11,6 +15,7 @@ import 'screens/crisis_screen.dart';
 import 'screens/account_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/detail_screen.dart';
 import 'screens/docs_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
@@ -23,9 +28,13 @@ class PublicaidApp extends StatefulWidget {
 }
 
 class _PublicaidAppState extends State<PublicaidApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
   late final ApiService _apiService;
   late final AuthService _authService;
   late final BookmarkService _bookmarkService;
+  late final PlanService _planService;
+  late final VaultService _vaultService;
+  late final NotificationService _notificationService;
   late final LocationService _locationService;
   bool _initialized = false;
 
@@ -35,6 +44,10 @@ class _PublicaidAppState extends State<PublicaidApp> {
     _apiService = ApiService();
     _authService = AuthService(_apiService);
     _bookmarkService = BookmarkService(_apiService, _authService);
+    _planService = PlanService(_apiService, _authService);
+    _vaultService = VaultService();
+    _notificationService = NotificationService();
+    _bookmarkService.setNotificationService(_notificationService);
     _locationService = LocationService();
 
     _authService.addListener(_onAuthChanged);
@@ -45,11 +58,30 @@ class _PublicaidAppState extends State<PublicaidApp> {
     await _locationService.init();
     await _authService.init();
     await _bookmarkService.init();
+    await _planService.init();
+    _vaultService.setAuthToken(_authService.token);
+    await _notificationService.init();
+    _notificationService.onNotificationTap = (entityId, entityName) {
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => DetailScreen(
+            apiService: _apiService,
+            entityId: entityId,
+            entityName: entityName,
+            bookmarkService: _bookmarkService,
+            authService: _authService,
+            planService: _planService,
+          ),
+        ),
+      );
+    };
     if (mounted) setState(() => _initialized = true);
   }
 
   void _onAuthChanged() {
     _bookmarkService.onAuthChanged();
+    _planService.onAuthChanged();
+    _vaultService.setAuthToken(_authService.token);
   }
 
   @override
@@ -57,6 +89,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
     _authService.removeListener(_onAuthChanged);
     _authService.dispose();
     _bookmarkService.dispose();
+    _planService.dispose();
     _locationService.dispose();
     super.dispose();
   }
@@ -64,6 +97,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Publicaid',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
@@ -74,6 +108,8 @@ class _PublicaidAppState extends State<PublicaidApp> {
               apiService: _apiService,
               authService: _authService,
               bookmarkService: _bookmarkService,
+              planService: _planService,
+              vaultService: _vaultService,
               locationService: _locationService,
             )
           : const _SplashScreen(),
@@ -116,12 +152,16 @@ class _AppShell extends StatefulWidget {
   final ApiService apiService;
   final AuthService authService;
   final BookmarkService bookmarkService;
+  final PlanService planService;
+  final VaultService vaultService;
   final LocationService locationService;
 
   const _AppShell({
     required this.apiService,
     required this.authService,
     required this.bookmarkService,
+    required this.planService,
+    required this.vaultService,
     required this.locationService,
   });
 
@@ -143,6 +183,7 @@ class _AppShellState extends State<_AppShell> {
         locationService: widget.locationService,
         authService: widget.authService,
         bookmarkService: widget.bookmarkService,
+        planService: widget.planService,
         onSwitchTab: (index) => setState(() => _currentIndex = index),
         onOpenAccount: () => _handleMenuNav('account'),
       ),
@@ -151,6 +192,7 @@ class _AppShellState extends State<_AppShell> {
         locationService: widget.locationService,
         authService: widget.authService,
         bookmarkService: widget.bookmarkService,
+        planService: widget.planService,
       ),
       GuideScreen(
         apiService: widget.apiService,
@@ -192,7 +234,19 @@ class _AppShellState extends State<_AppShell> {
             builder: (_) => AccountScreen(
               authService: widget.authService,
               apiService: widget.apiService,
+              planService: widget.planService,
+              vaultService: widget.vaultService,
               onNavigate: _handleMenuNav,
+            ),
+          ),
+        );
+        break;
+      case 'plan':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PlanScreen(
+              planService: widget.planService,
+              apiService: widget.apiService,
             ),
           ),
         );
