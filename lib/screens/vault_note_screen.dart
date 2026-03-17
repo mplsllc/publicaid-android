@@ -7,11 +7,13 @@ import '../theme.dart';
 class VaultNoteScreen extends StatefulWidget {
   final VaultService vaultService;
   final Map<String, dynamic>? existingNote;
+  final String? section;
 
   const VaultNoteScreen({
     super.key,
     required this.vaultService,
     this.existingNote,
+    this.section,
   });
 
   @override
@@ -73,7 +75,7 @@ class _VaultNoteScreenState extends State<VaultNoteScreen> {
         final id = widget.existingNote!['id'] as String;
         await widget.vaultService.updateNote(id, title, content);
       } else {
-        await widget.vaultService.addNote(title, content);
+        await widget.vaultService.addNote(title, content, section: widget.section);
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {

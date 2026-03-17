@@ -56,6 +56,7 @@ class _VaultPinScreenState extends State<VaultPinScreen>
   int _attempts = 0;
   bool _lockedOut = false;
   Timer? _lockoutTimer;
+  bool _biometricAvailable = false;
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -85,7 +86,15 @@ class _VaultPinScreenState extends State<VaultPinScreen>
   Future<void> _detectMode() async {
     final hasLocal = await widget.vaultService.hasVault();
     if (hasLocal) {
-      if (mounted) setState(() { _mode = _VaultMode.pinUnlock; _loading = false; });
+      final bioEnabled = await widget.vaultService.isBiometricEnabled();
+      if (mounted) {
+        setState(() {
+          _mode = _VaultMode.pinUnlock;
+          _biometricAvailable = bioEnabled;
+          _loading = false;
+        });
+        if (bioEnabled) _tryBiometric();
+      }
       return;
     }
 
@@ -180,6 +189,25 @@ class _VaultPinScreenState extends State<VaultPinScreen>
       _pin = _pin.substring(0, _pin.length - 1);
       _pinError = null;
     });
+  }
+
+  Future<void> _tryBiometric() async {
+    setState(() => _loading = true);
+    try {
+      final success = await widget.vaultService.unlockWithBiometric();
+      if (success && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VaultScreen(vaultService: widget.vaultService),
+          ),
+        );
+      } else if (mounted) {
+        setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _onPinComplete() async {
@@ -594,49 +622,55 @@ class _VaultPinScreenState extends State<VaultPinScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildPinPad() {
-    return Column(
-      children: [
-        const Spacer(flex: 2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 24),
 
-        // Title
-        Text(
-          _title,
-          style: const TextStyle(
-            fontFamily: 'DMSans',
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 32),
-
-        // PIN dots
-        AnimatedBuilder(
-          animation: _shakeAnimation,
-          builder: (context, child) {
-            final dx = _shakeAnimation.value *
-                10 *
-                ((_shakeController.value * 6).round().isEven ? 1 : -1);
-            return Transform.translate(
-              offset: Offset(dx, 0),
-              child: child,
-            );
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(6, (i) {
-              final filled = i < _pin.length;
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: filled ? Colors.white : Colors.transparent,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    width: 2,
+                // Title
+                Text(
+                  _title,
+                  style: const TextStyle(
+                    fontFamily: 'DMSans',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
+                ),
+                const SizedBox(height: 32),
+
+                // PIN dots
+                AnimatedBuilder(
+                  animation: _shakeAnimation,
+                  builder: (context, child) {
+                    final dx = _shakeAnimation.value *
+                        10 *
+                        ((_shakeController.value * 6).round().isEven ? 1 : -1);
+                    return Transform.translate(
+                      offset: Offset(dx, 0),
+                      child: child,
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(6, (i) {
+                      final filled = i < _pin.length;
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: filled ? Colors.white : Colors.transparent,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            width: 2,
+                          ),
                 ),
               );
             }),
@@ -644,28 +678,53 @@ class _VaultPinScreenState extends State<VaultPinScreen>
         ),
         const SizedBox(height: 24),
 
-        // Error message
-        SizedBox(
-          height: 20,
-          child: _pinError != null
-              ? Text(
-                  _pinError!,
-                  style: TextStyle(
-                    fontFamily: 'DMSans',
-                    fontSize: 14,
-                    color: Colors.red.shade300,
+                // Error message
+                SizedBox(
+                  height: 20,
+                  child: _pinError != null
+                      ? Text(
+                          _pinError!,
+                          style: TextStyle(
+                            fontFamily: 'DMSans',
+                            fontSize: 14,
+                            color: Colors.red.shade300,
+                          ),
+                        )
+                      : null,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Numpad
+                _buildNumpad(),
+
+                // Biometric button (PIN unlock mode only)
+                if (_mode == _VaultMode.pinUnlock && _biometricAvailable) ...[
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: _tryBiometric,
+                    child: Column(
+                      children: [
+                        Icon(Icons.fingerprint, size: 36,
+                            color: Colors.white.withValues(alpha: 0.7)),
+                        const SizedBox(height: 4),
+                        Text('Use fingerprint',
+                            style: TextStyle(
+                              fontFamily: 'DMSans',
+                              fontSize: 13,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            )),
+                      ],
+                    ),
                   ),
-                )
-              : null,
-        ),
+                ],
 
-        const Spacer(flex: 1),
-
-        // Numpad
-        _buildNumpad(),
-
-        const Spacer(flex: 1),
-      ],
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

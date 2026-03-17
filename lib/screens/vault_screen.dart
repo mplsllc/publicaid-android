@@ -1,14 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'dart:io';
+
 import '../services/vault_service.dart';
 import '../theme.dart';
-import 'vault_note_screen.dart';
+import 'vault_section_screen.dart';
+import 'vault_emergency_screen.dart';
 
 class VaultScreen extends StatefulWidget {
   final VaultService vaultService;
@@ -21,7 +20,6 @@ class VaultScreen extends StatefulWidget {
 class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
   static const _secureChannel = MethodChannel('org.publicaid.app/secure');
 
-  List<Map<String, dynamic>> _documents = [];
   Map<String, dynamic>? _usage;
   bool _loading = true;
 
@@ -31,7 +29,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
     _cleanupTempFiles();
     WidgetsBinding.instance.addObserver(this);
     _setSecure(true);
-    _loadDocuments();
+    _loadData();
   }
 
   @override
@@ -68,14 +66,12 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
     } catch (_) {}
   }
 
-  Future<void> _loadDocuments() async {
+  Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
-      final docs = widget.vaultService.getDocuments();
       final usage = await widget.vaultService.getUsage();
       if (mounted) {
         setState(() {
-          _documents = docs;
           _usage = usage;
           _loading = false;
         });
@@ -87,164 +83,114 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _deleteDocument(String id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Document'),
-        content: const Text(
-          'This document will be permanently deleted. This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await widget.vaultService.deleteDocument(id);
-      _loadDocuments();
-    }
-  }
-
   void _lock() {
     widget.vaultService.lockVault();
     Navigator.pop(context);
   }
 
   // ---------------------------------------------------------------------------
-  // Tap handler
+  // Settings dialog (biometric toggle)
   // ---------------------------------------------------------------------------
 
-  void _onTapDocument(Map<String, dynamic> doc) {
-    final type = doc['type'] as String?;
-    if (type == 'note') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VaultNoteScreen(
-            vaultService: widget.vaultService,
-            existingNote: doc,
-          ),
-        ),
-      ).then((_) => _loadDocuments());
-    } else {
-      _viewFile(doc);
-    }
-  }
+  Future<void> _showSettings() async {
+    final canUseBiometric = await widget.vaultService.canUseBiometric();
+    var biometricEnabled = await widget.vaultService.isBiometricEnabled();
 
-  // ---------------------------------------------------------------------------
-  // File viewing
-  // ---------------------------------------------------------------------------
+    if (!mounted) return;
 
-  static const _imageExtensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'};
-
-  bool _isImageFile(String title) {
-    final lower = title.toLowerCase();
-    return _imageExtensions.any((ext) => lower.endsWith(ext));
-  }
-
-  Future<void> _viewFile(Map<String, dynamic> doc) async {
-    final id = doc['id'] as String;
-    final title = doc['title'] as String? ?? 'File';
-
-    setState(() => _loading = true);
-
-    try {
-      if (_isImageFile(title)) {
-        // Images: decrypt in-memory and show with InteractiveViewer.
-        final decryptedBytes = await widget.vaultService.downloadFile(id);
-        setState(() => _loading = false);
-
-        if (!mounted) return;
-
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => _VaultFileViewer(
-              title: title,
-              bytes: decryptedBytes,
+    await showModalBottomSheet(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Vault Settings',
+                  style: TextStyle(
+                    fontFamily: 'DMSans',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.text(ctx),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.fingerprint,
+                      color: canUseBiometric
+                          ? AppColors.accent(ctx)
+                          : AppColors.muted(ctx),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Unlock with fingerprint',
+                            style: TextStyle(
+                              fontFamily: 'DMSans',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.text(ctx),
+                            ),
+                          ),
+                          if (!canUseBiometric)
+                            Text(
+                              'Biometric authentication not available',
+                              style: TextStyle(
+                                fontFamily: 'DMSans',
+                                fontSize: 13,
+                                color: AppColors.muted(ctx),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: biometricEnabled,
+                      activeColor: AppColors.accent(ctx),
+                      onChanged: canUseBiometric
+                          ? (value) async {
+                              try {
+                                if (value) {
+                                  await widget.vaultService.enableBiometric();
+                                } else {
+                                  await widget.vaultService.disableBiometric();
+                                }
+                                setSheetState(
+                                    () => biometricEnabled = value);
+                              } catch (_) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Could not update biometric setting'),
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
           ),
-        );
-      } else {
-        // Non-image files: decrypt to temp path and open with system viewer.
-        final path = await widget.vaultService.decryptToTempFile(id);
-        setState(() => _loading = false);
-
-        if (!mounted) return;
-
-        final result = await OpenFilex.open(path);
-
-        if (!mounted) return;
-
-        switch (result.type) {
-          case ResultType.done:
-            break;
-          case ResultType.noAppToOpen:
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('No app available to open this file type')),
-            );
-            break;
-          case ResultType.permissionDenied:
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Permission denied')),
-            );
-            break;
-          case ResultType.fileNotFound:
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('File not found')),
-            );
-            break;
-          case ResultType.error:
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Could not open file')),
-            );
-            break;
-        }
-      }
-    } catch (e) {
-      setState(() => _loading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open file')),
-        );
-      }
-    }
+        ),
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------
-  // Share handler
-  // ---------------------------------------------------------------------------
-
-  Future<void> _shareFile(Map<String, dynamic> doc) async {
-    try {
-      final path =
-          await widget.vaultService.decryptToTempFile(doc['id'] as String);
-      await Share.shareXFiles(
-        [XFile(path)],
-        text: doc['title'] as String? ?? 'File',
-      );
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not share file')),
-        );
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Add menu
+  // FAB add menu
   // ---------------------------------------------------------------------------
 
   void _showAddMenu() {
@@ -255,30 +201,36 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.upload_file_outlined,
+              leading: Icon(Icons.badge_outlined,
                   color: AppColors.accent(context)),
-              title: Text('Add Document',
+              title: Text('Identity Documents',
                   style: TextStyle(color: AppColors.text(context))),
               onTap: () {
                 Navigator.pop(ctx);
-                _pickAndUploadFile();
+                _navigateToSection('identity', 'Identity Documents',
+                    autoPickFile: true);
               },
             ),
             ListTile(
-              leading: Icon(Icons.note_add_outlined,
+              leading: Icon(Icons.health_and_safety_outlined,
                   color: AppColors.accent(context)),
-              title: Text('Add Note',
+              title: Text('Insurance Cards',
                   style: TextStyle(color: AppColors.text(context))),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => VaultNoteScreen(
-                      vaultService: widget.vaultService,
-                    ),
-                  ),
-                ).then((_) => _loadDocuments());
+                _navigateToSection('insurance', 'Insurance Cards',
+                    autoPickFile: true);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.folder_outlined,
+                  color: AppColors.accent(context)),
+              title: Text('General Documents',
+                  style: TextStyle(color: AppColors.text(context))),
+              onTap: () {
+                Navigator.pop(ctx);
+                _navigateToSection('general', 'General Documents',
+                    autoPickFile: true);
               },
             ),
           ],
@@ -288,59 +240,40 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
   }
 
   // ---------------------------------------------------------------------------
-  // Add document via file picker
+  // Navigation
   // ---------------------------------------------------------------------------
 
-  Future<void> _pickAndUploadFile() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.any);
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.first;
-
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('File too large (max 10 MB)')),
-          );
-        }
-        return;
-      }
-
-      Uint8List bytes;
-      if (file.path != null) {
-        bytes = await File(file.path!).readAsBytes();
-      } else if (file.bytes != null) {
-        bytes = file.bytes!;
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not read file')),
-          );
-        }
-        return;
-      }
-
-      setState(() => _loading = true);
-      await widget.vaultService.addFile(file.name, bytes);
-      _loadDocuments();
-
+  void _navigateToSection(String section, String title,
+      {bool autoPickFile = false}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VaultSectionScreen(
+          vaultService: widget.vaultService,
+          section: section,
+          sectionTitle: title,
+          autoPickFile: autoPickFile,
+        ),
+      ),
+    ).then((_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${file.name} saved'),
-            backgroundColor: AppColors.greenAccent,
-          ),
-        );
+        setState(() {}); // refresh counts
+        _loadData(); // refresh usage
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save file')),
-        );
-      }
-    }
+    });
+  }
+
+  void _navigateToEmergency() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VaultEmergencyScreen(
+          vaultService: widget.vaultService,
+        ),
+      ),
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -356,36 +289,6 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 
-  IconData _iconForFile(String title) {
-    final lower = title.toLowerCase();
-    if (lower.endsWith('.pdf')) return Icons.picture_as_pdf;
-    if (_imageExtensions.any((ext) => lower.endsWith(ext))) {
-      return Icons.image;
-    }
-    return Icons.insert_drive_file;
-  }
-
-  String _extensionLabel(String title) {
-    final dot = title.lastIndexOf('.');
-    if (dot != -1 && dot < title.length - 1) {
-      return title.substring(dot + 1).toUpperCase();
-    }
-    return 'FILE';
-  }
-
-  String _formatDate(String? iso) {
-    if (iso == null) return '';
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      final m = dt.month.toString().padLeft(2, '0');
-      final d = dt.day.toString().padLeft(2, '0');
-      final y = dt.year.toString();
-      return '$m/$d/$y';
-    } catch (_) {
-      return '';
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
@@ -397,6 +300,11 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
         title: const Text('Documents'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: _showSettings,
+          ),
+          IconButton(
             icon: const Icon(Icons.lock_outlined),
             tooltip: 'Lock vault',
             onPressed: _lock,
@@ -407,11 +315,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                Expanded(
-                  child: _documents.isEmpty
-                      ? _buildEmptyState()
-                      : _buildDocumentList(),
-                ),
+                Expanded(child: _buildSectionList()),
                 if (_usage != null) _buildUsageBar(),
               ],
             ),
@@ -423,75 +327,57 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.folder_outlined,
-            size: 64,
-            color: AppColors.muted(context),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No documents yet',
-            style: TextStyle(
-              fontFamily: 'DMSans',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.text(context),
+  Widget _buildSectionList() {
+    final sections = [
+      _SectionInfo(
+        icon: Icons.badge_outlined,
+        title: 'Identity Documents',
+        section: 'identity',
+      ),
+      _SectionInfo(
+        icon: Icons.health_and_safety_outlined,
+        title: 'Insurance Cards',
+        section: 'insurance',
+      ),
+      _SectionInfo(
+        icon: Icons.folder_outlined,
+        title: 'General Documents',
+        section: 'general',
+      ),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // File sections
+        for (final s in sections) ...[
+          _buildSectionCard(
+            icon: s.icon,
+            title: s.title,
+            trailing: _buildItemCount(
+              widget.vaultService.getDocumentsBySection(s.section).length,
             ),
+            onTap: () => _navigateToSection(s.section, s.title),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Tap + to add a document or note',
-            style: TextStyle(
-              fontFamily: 'DMSans',
-              fontSize: 14,
-              color: AppColors.muted(context),
-            ),
-          ),
         ],
-      ),
+        // Emergency section
+        _buildSectionCard(
+          icon: Icons.emergency_outlined,
+          title: 'Emergency Info',
+          trailing: _buildEmergencyDot(),
+          onTap: _navigateToEmergency,
+        ),
+      ],
     );
   }
 
-  Widget _buildDocumentList() {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _documents.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final doc = _documents[index];
-        return _buildDocumentCard(doc);
-      },
-    );
-  }
-
-  Widget _buildDocumentCard(Map<String, dynamic> doc) {
-    final type = doc['type'] as String?;
-    final title = doc['title'] as String? ?? 'Untitled';
-    final isNote = type == 'note';
-    final createdAt = doc['createdAt'] as String?;
-
-    // Subtitle
-    String subtitle;
-    if (isNote) {
-      final content = doc['content'] as String? ?? '';
-      subtitle = content.split('\n').first;
-      if (subtitle.length > 80) {
-        subtitle = '${subtitle.substring(0, 80)}...';
-      }
-      if (subtitle.isEmpty) subtitle = 'Empty note';
-    } else {
-      final size = doc['sizeBytes'] as int? ?? doc['size'] as int? ?? 0;
-      subtitle = '${_extensionLabel(title)} \u00B7 ${_formatBytes(size)}';
-    }
-
-    // Icon
-    final icon = isNote ? Icons.note_outlined : _iconForFile(title);
-
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String title,
+    required Widget trailing,
+    required VoidCallback onTap,
+  }) {
     return Card(
       color: AppColors.card(context),
       shape: RoundedRectangleBorder(
@@ -500,81 +386,59 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _onTapDocument(doc),
-        onLongPress: () {
-          final id = doc['id'] as String?;
-          if (id != null) _deleteDocument(id);
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: AppColors.accent(context),
-                size: 28,
-              ),
+              Icon(icon, color: AppColors.accent(context), size: 28),
               const SizedBox(width: 16),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontFamily: 'DMSans',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.text(context),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontFamily: 'DMSans',
-                        fontSize: 13,
-                        color: AppColors.muted(context),
-                        fontStyle: isNote ? FontStyle.italic : FontStyle.normal,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (createdAt != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatDate(createdAt),
-                        style: TextStyle(
-                          fontFamily: 'DMSans',
-                          fontSize: 12,
-                          color: AppColors.muted(context),
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'DMSans',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.text(context),
+                  ),
                 ),
               ),
-              if (!isNote)
-                IconButton(
-                  icon: Icon(
-                    Icons.share_outlined,
-                    color: AppColors.muted(context),
-                    size: 20,
-                  ),
-                  tooltip: 'Share',
-                  onPressed: () => _shareFile(doc),
-                )
-              else
-                Icon(
-                  Icons.chevron_right,
-                  color: AppColors.muted(context),
-                  size: 20,
-                ),
+              trailing,
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.muted(context),
+                size: 20,
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildItemCount(int count) {
+    return Text(
+      '$count',
+      style: TextStyle(
+        fontFamily: 'DMSans',
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.muted(context),
+      ),
+    );
+  }
+
+  Widget _buildEmergencyDot() {
+    final hasData = widget.vaultService.hasEmergencyData();
+    return Text(
+      hasData ? '\u25CF' : '\u25CB',
+      style: TextStyle(
+        fontSize: 14,
+        color: hasData
+            ? AppColors.greenTextOf(context)
+            : AppColors.muted(context),
       ),
     );
   }
@@ -626,63 +490,17 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
 }
 
 // ---------------------------------------------------------------------------
-// Image viewer (kept as-is)
+// Helper class for section definitions
 // ---------------------------------------------------------------------------
 
-class _VaultFileViewer extends StatefulWidget {
+class _SectionInfo {
+  final IconData icon;
   final String title;
-  final Uint8List bytes;
+  final String section;
 
-  const _VaultFileViewer({required this.title, required this.bytes});
-
-  @override
-  State<_VaultFileViewer> createState() => _VaultFileViewerState();
-}
-
-class _VaultFileViewerState extends State<_VaultFileViewer> {
-  static const _secureChannel = MethodChannel('org.publicaid.app/secure');
-
-  @override
-  void initState() {
-    super.initState();
-    _secureChannel.invokeMethod('setSecure', true);
-  }
-
-  @override
-  void dispose() {
-    _secureChannel.invokeMethod('setSecure', false);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: InteractiveViewer(
-          minScale: 0.5,
-          maxScale: 4.0,
-          child: Image.memory(
-            widget.bytes,
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.broken_image_outlined,
-                    size: 64, color: AppColors.muted(context)),
-                const SizedBox(height: 12),
-                Text('Unable to display this file',
-                    style: TextStyle(color: AppColors.muted(context))),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  const _SectionInfo({
+    required this.icon,
+    required this.title,
+    required this.section,
+  });
 }

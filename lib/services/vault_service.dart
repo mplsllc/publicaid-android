@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:local_auth/local_auth.dart';
 import 'package:pointycastle/export.dart';
 
 class VaultService {
@@ -25,6 +26,9 @@ class VaultService {
   Uint8List? _encryptionKey;
   List<Map<String, dynamic>>? _documents;
   String? _temporaryPassword; // held between unlockWithPassword and setPin
+  String? _currentPassword; // held while vault is unlocked (for biometric setup)
+
+  final LocalAuthentication _localAuth = LocalAuthentication();
 
   VaultService({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();
@@ -110,6 +114,7 @@ class VaultService {
     // Derive the real AES encryption key from the password
     final vaultSalt = base64Decode(vaultSaltB64);
     _encryptionKey = _deriveKey(password, vaultSalt);
+    _currentPassword = password;
 
     await _downloadAndDecryptManifest(vaultSaltB64);
     return true;
@@ -147,6 +152,7 @@ class VaultService {
 
     // Hold the password temporarily so setPin can encrypt it.
     _temporaryPassword = password;
+    _currentPassword = password;
     return true;
   }
 
@@ -200,6 +206,7 @@ class VaultService {
       _encryptionKey = null;
     }
     _temporaryPassword = null;
+    _currentPassword = null;
     _documents = null;
   }
 
@@ -213,8 +220,18 @@ class VaultService {
         _documents!.map((d) => Map<String, dynamic>.from(d)));
   }
 
+  /// Return documents filtered by section. Used by identity/insurance/general screens.
+  /// Documents without a section field default to "general".
+  List<Map<String, dynamic>> getDocumentsBySection(String section) {
+    _assertUnlocked();
+    return _documents!
+        .where((d) => (d['section'] as String? ?? 'general') == section)
+        .map((d) => Map<String, dynamic>.from(d))
+        .toList();
+  }
+
   /// Add a plaintext note to the vault manifest.
-  Future<void> addNote(String title, String content) async {
+  Future<void> addNote(String title, String content, {String? section}) async {
     _assertUnlocked();
 
     final doc = <String, dynamic>{
@@ -224,7 +241,120 @@ class VaultService {
       'content': content,
       'createdAt': DateTime.now().toUtc().toIso8601String(),
     };
+    if (section != null) doc['section'] = section;
     _documents!.add(doc);
+    await _uploadManifest();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Emergency data helpers
+  // ---------------------------------------------------------------------------
+
+  /// Get emergency contacts from the manifest.
+  List<Map<String, dynamic>> getEmergencyContacts() {
+    _assertUnlocked();
+    final doc = _documents!.firstWhere(
+      (d) => d['type'] == 'emergency_contacts',
+      orElse: () => <String, dynamic>{},
+    );
+    if (doc.isEmpty) return [];
+    final contacts = doc['contacts'] as List<dynamic>? ?? [];
+    return contacts.map((c) => Map<String, dynamic>.from(c as Map)).toList();
+  }
+
+  /// Save emergency contacts to the manifest.
+  Future<void> saveEmergencyContacts(List<Map<String, dynamic>> contacts) async {
+    _assertUnlocked();
+    final index = _documents!.indexWhere((d) => d['type'] == 'emergency_contacts');
+    final doc = <String, dynamic>{
+      'id': index >= 0 ? _documents![index]['id'] as String : _generateId(),
+      'type': 'emergency_contacts',
+      'contacts': contacts,
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (index >= 0) {
+      _documents![index] = doc;
+    } else {
+      _documents!.add(doc);
+    }
+    await _uploadManifest();
+  }
+
+  /// Get emergency medical info from the manifest.
+  Map<String, dynamic>? getEmergencyMedical() {
+    _assertUnlocked();
+    final doc = _documents!.firstWhere(
+      (d) => d['type'] == 'emergency_medical',
+      orElse: () => <String, dynamic>{},
+    );
+    if (doc.isEmpty) return null;
+    return Map<String, dynamic>.from(doc);
+  }
+
+  /// Save emergency medical info to the manifest.
+  Future<void> saveEmergencyMedical(Map<String, dynamic> data) async {
+    _assertUnlocked();
+    final index = _documents!.indexWhere((d) => d['type'] == 'emergency_medical');
+    final doc = <String, dynamic>{
+      'id': index >= 0 ? _documents![index]['id'] as String : _generateId(),
+      'type': 'emergency_medical',
+      ...data,
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (index >= 0) {
+      _documents![index] = doc;
+    } else {
+      _documents!.add(doc);
+    }
+    await _uploadManifest();
+  }
+
+  /// Get notes with section == 'emergency'.
+  List<Map<String, dynamic>> getEmergencyNotes() {
+    _assertUnlocked();
+    return _documents!
+        .where((d) => d['type'] == 'note' && d['section'] == 'emergency')
+        .map((d) => Map<String, dynamic>.from(d))
+        .toList();
+  }
+
+  /// Check if any emergency data exists (for the ● indicator on home screen).
+  bool hasEmergencyData() {
+    _assertUnlocked();
+    return _documents!.any((d) =>
+      d['type'] == 'emergency_contacts' ||
+      d['type'] == 'emergency_medical' ||
+      d['type'] == 'emergency_bookmarks' ||
+      (d['type'] == 'note' && d['section'] == 'emergency'));
+  }
+
+  /// Get emergency bookmarks snapshot from the manifest.
+  List<Map<String, dynamic>> getEmergencyBookmarks() {
+    _assertUnlocked();
+    final doc = _documents!.firstWhere(
+      (d) => d['type'] == 'emergency_bookmarks',
+      orElse: () => <String, dynamic>{},
+    );
+    if (doc.isEmpty) return [];
+    final items = doc['bookmarks'] as List<dynamic>? ?? [];
+    return items.map((b) => Map<String, dynamic>.from(b as Map)).toList();
+  }
+
+  /// Save emergency bookmarks snapshot to the manifest.
+  Future<void> saveEmergencyBookmarks(List<Map<String, dynamic>> bookmarks) async {
+    _assertUnlocked();
+    final index = _documents!.indexWhere((d) => d['type'] == 'emergency_bookmarks');
+    final doc = <String, dynamic>{
+      'id': index >= 0 ? _documents![index]['id'] as String : _generateId(),
+      'type': 'emergency_bookmarks',
+      'bookmarks': bookmarks,
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    if (index >= 0) {
+      _documents![index] = doc;
+    } else {
+      _documents!.add(doc);
+    }
     await _uploadManifest();
   }
 
@@ -241,6 +371,26 @@ class VaultService {
       'id': fileId,
       'type': 'file',
       'title': title,
+      'sizeBytes': sizeBytes,
+      'createdAt': DateTime.now().toUtc().toIso8601String(),
+    };
+    _documents!.add(doc);
+    await _uploadManifest();
+  }
+
+  /// Encrypt a file, upload it to R2, record in manifest with section and description.
+  Future<void> addFileToSection(String title, Uint8List fileBytes, {required String section, required String description}) async {
+    _assertUnlocked();
+    final encrypted = _encrypt(fileBytes);
+    final uploadResponse = await _uploadFile(encrypted);
+    final fileId = uploadResponse['id'] as String;
+    final sizeBytes = uploadResponse['size_bytes'] as int;
+    final doc = <String, dynamic>{
+      'id': fileId,
+      'type': 'file',
+      'section': section,
+      'title': title,
+      'description': description,
       'sizeBytes': sizeBytes,
       'createdAt': DateTime.now().toUtc().toIso8601String(),
     };
@@ -331,6 +481,80 @@ class VaultService {
       return body['data'] as Map<String, dynamic>;
     }
     throw VaultException(response.statusCode, 'Failed to get usage');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Biometric unlock
+  // ---------------------------------------------------------------------------
+
+  /// Check if device supports biometric.
+  Future<bool> canUseBiometric() async {
+    try {
+      final isAvailable = await _localAuth.canCheckBiometrics;
+      final isSupported = await _localAuth.isDeviceSupported();
+      return isAvailable || isSupported;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Check if biometric unlock is enabled for the vault.
+  Future<bool> isBiometricEnabled() async {
+    final flag = await _storage.read(key: 'vault_biometric_enabled');
+    return flag == 'true';
+  }
+
+  /// Enable biometric unlock. Reads password from in-memory state, prompts
+  /// biometric to confirm, stores password in secure storage on success.
+  /// Returns true on success, false if biometric prompt failed/cancelled.
+  Future<bool> enableBiometric() async {
+    if (_currentPassword == null) return false;
+    try {
+      final authenticated = await _localAuth.authenticate(
+        localizedReason: 'Confirm your identity to enable fingerprint unlock',
+        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false),
+      );
+      if (!authenticated) return false;
+      await _storage.write(key: 'vault_bio_password', value: _currentPassword!);
+      await _storage.write(key: 'vault_biometric_enabled', value: 'true');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Disable biometric unlock.
+  Future<void> disableBiometric() async {
+    await _storage.delete(key: 'vault_bio_password');
+    await _storage.delete(key: 'vault_biometric_enabled');
+  }
+
+  /// Unlock vault using biometric. Prompts local_auth, reads stored password,
+  /// derives AES key, decrypts manifest.
+  Future<bool> unlockWithBiometric() async {
+    try {
+      final authenticated = await _localAuth.authenticate(
+        localizedReason: 'Unlock your document vault',
+        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false),
+      );
+      if (!authenticated) return false;
+
+      final password = await _storage.read(key: 'vault_bio_password');
+      if (password == null) return false;
+
+      final saltB64 = await _storage.read(key: 'vault_salt');
+      if (saltB64 == null) return false;
+
+      final salt = base64Decode(saltB64);
+      _encryptionKey = _deriveKey(password, salt);
+      _currentPassword = password;
+
+      // Download and decrypt manifest (same logic as unlockWithPin)
+      await _downloadAndDecryptManifest(saltB64);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------
