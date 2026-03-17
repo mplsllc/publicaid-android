@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -66,7 +67,7 @@ class _DetailScreenState extends State<DetailScreen> {
         });
       }
     } catch (e) {
-      debugPrint('DetailScreen error loading ${widget.entityId}: $e');
+      if (kDebugMode) debugPrint('DetailScreen error loading ${widget.entityId}: $e');
       // Auto-retry up to 3 times with backoff
       if (_retryCount < 3 && mounted) {
         _retryCount++;
@@ -120,12 +121,17 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _callPhone(String phone) {
-    launchUrl(Uri.parse('tel:$phone'));
+    final sanitized = phone.replaceAll(RegExp(r'[^\d\s\+\-().]'), '');
+    if (sanitized.isNotEmpty) {
+      launchUrl(Uri.parse('tel:$sanitized'));
+    }
   }
 
   void _openWebsite(String url) {
-    final uri = url.startsWith('http') ? url : 'https://$url';
-    launchUrl(Uri.parse(uri), mode: LaunchMode.externalApplication);
+    final parsed = Uri.tryParse(url.startsWith('http') ? url : 'https://$url');
+    if (parsed != null && ['http', 'https'].contains(parsed.scheme)) {
+      launchUrl(parsed, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override

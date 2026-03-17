@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../widgets/app_menu.dart';
 import '../models/category.dart' as models;
 import '../services/api_service.dart';
@@ -143,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F0FA),
+      backgroundColor: AppColors.heroBgOf(context),
       appBar: AppBar(
         title: Image.asset('assets/images/logo-light.png', height: 28),
         automaticallyImplyLeading: false,
@@ -164,15 +163,15 @@ class _HomeScreenState extends State<HomeScreen> {
             // Hero section with search card inside (card pokes out via margin-bottom -32)
             SliverToBoxAdapter(child: _buildHeroWithSearch()),
             // "Browse by need" heading
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 48, 20, 10),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 10),
                 child: Text(
                   'Browse by need',
                   style: TextStyle(
                     fontFamily: 'InstrumentSerif',
                     fontSize: 21,
-                    color: AppColors.navyBlue,
+                    color: AppColors.text(context),
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -193,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           size: 48, color: AppColors.mediumGray),
                       const SizedBox(height: 8),
                       Text(_error!,
-                          style: const TextStyle(color: AppColors.grayText)),
+                          style: TextStyle(color: AppColors.muted(context))),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: () {
@@ -210,10 +209,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             else if (_categories.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Text('No categories available',
-                      style: TextStyle(color: AppColors.grayText)),
+                      style: TextStyle(color: AppColors.muted(context))),
                 ),
               )
             else ...[
@@ -240,9 +239,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: OutlinedButton(
                       onPressed: () => setState(() => _showAllCategories = true),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF4A90D9),
-                        side: const BorderSide(color: Color(0xFFC8DAF0), width: 1.5),
+                        backgroundColor: AppColors.card(context),
+                        foregroundColor: AppColors.accent(context),
+                        side: BorderSide(color: AppColors.cardBorderOf(context), width: 1.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -257,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontFamily: 'DMSans',
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF4A90D9),
+                              color: AppColors.accent(context),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -335,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -360,32 +359,32 @@ class _HomeScreenState extends State<HomeScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide:
-                              const BorderSide(color: AppColors.inputBorder),
+                              BorderSide(color: AppColors.inputBorderOf(context)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                              color: AppColors.inputBorder, width: 1.5),
+                          borderSide: BorderSide(
+                              color: AppColors.inputBorderOf(context), width: 1.5),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                              color: AppColors.brightBlue, width: 2),
+                          borderSide: BorderSide(
+                              color: AppColors.accent(context), width: 2),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 12),
                         filled: true,
-                        fillColor: AppColors.lightBg,
+                        fillColor: AppColors.bg(context),
                         hintStyle: const TextStyle(
                           fontFamily: 'DMSans',
                           color: AppColors.mediumGray,
                           fontSize: 15,
                         ),
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 15,
-                        color: AppColors.navyBlue,
+                        color: AppColors.text(context),
                       ),
                       textInputAction: TextInputAction.search,
                       onSubmitted: _onSearch,
@@ -397,14 +396,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ElevatedButton(
                       onPressed: () => _onSearch(_searchController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1565C0),
+                        backgroundColor: AppColors.accent(context),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         elevation: 2,
-                        shadowColor: const Color(0xFF1565C0).withAlpha(77),
+                        shadowColor: AppColors.accent(context).withAlpha(77),
                       ),
                       child: const Text(
                         'Search',
@@ -440,9 +439,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF3FB),
+        color: AppColors.heroBgOf(context),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFC2D6F0), width: 1.5),
+        border: Border.all(color: AppColors.cardBorderOf(context), width: 1.5),
       ),
       child: Row(
         children: [
@@ -455,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontFamily: 'DMSans',
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: AppColors.brightBlue,
+                color: AppColors.accent(context),
               ),
             ),
           ),
@@ -477,9 +476,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF3FB),
+              color: AppColors.heroBgOf(context),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFC2D6F0), width: 1.5),
+              border: Border.all(color: AppColors.cardBorderOf(context), width: 1.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -492,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontFamily: 'DMSans',
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.brightBlue,
+                    color: AppColors.accent(context),
                   ),
                 ),
               ],
@@ -500,15 +499,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         // "or" divider
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'or',
             style: TextStyle(
               fontFamily: 'DMSans',
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Color(0xFFB0C4DE),
+              color: AppColors.muted(context),
             ),
           ),
         ),
@@ -525,33 +524,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 counterText: '',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                      color: AppColors.inputBorder, width: 1.5),
+                  borderSide: BorderSide(
+                      color: AppColors.inputBorderOf(context), width: 1.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                      color: AppColors.inputBorder, width: 1.5),
+                  borderSide: BorderSide(
+                      color: AppColors.inputBorderOf(context), width: 1.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                      color: AppColors.brightBlue, width: 2),
+                  borderSide: BorderSide(
+                      color: AppColors.accent(context), width: 2),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 filled: true,
-                fillColor: AppColors.lightBg,
+                fillColor: AppColors.bg(context),
                 hintStyle: const TextStyle(
                   fontFamily: 'DMSans',
                   color: AppColors.mediumGray,
                   fontSize: 13,
                 ),
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 13,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
               ),
             ),
           ),
@@ -563,17 +562,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategoryCard(models.Category category) {
     final emoji = _categoryEmojis[category.slug] ?? '\u{1F4CB}';
     return Material(
-      color: Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: () => _onCategoryTap(category),
         borderRadius: BorderRadius.circular(12),
-        splashColor: AppColors.heroBg,
+        splashColor: AppColors.heroBgOf(context),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.card(context),
             border: Border.all(
-              color: const Color(0xFFC8DAF0),
+              color: AppColors.cardBorderOf(context),
               width: 1.5,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -585,7 +584,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4F7FB),
+                  color: AppColors.bg(context),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 alignment: Alignment.center,
@@ -598,11 +597,11 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   category.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.navyBlue,
+                    color: AppColors.text(context),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -620,8 +619,8 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFC8DAF0), width: 1.5),
+          color: AppColors.card(context),
+          border: Border.all(color: AppColors.cardBorderOf(context), width: 1.5),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -638,7 +637,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.heroBg,
+                color: AppColors.heroBgOf(context),
                 borderRadius: BorderRadius.circular(10),
               ),
               alignment: Alignment.center,
@@ -649,21 +648,21 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Not sure where to start?',
                     style: TextStyle(
                       fontFamily: 'InstrumentSerif',
                       fontSize: 15,
-                      color: AppColors.navyBlue,
+                      color: AppColors.text(context),
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     "We'll help you find the right services.",
                     style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 11,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                       height: 1.3,
                     ),
                   ),
@@ -673,7 +672,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF4A90D9),
+                color: AppColors.accent(context),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Material(

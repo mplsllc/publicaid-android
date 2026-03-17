@@ -37,20 +37,6 @@ class ApiService {
     throw ApiException(response.statusCode, _parseErrorMessage(response.body));
   }
 
-  Future<Map<String, dynamic>> _post(String path,
-      {Map<String, dynamic>? body}) async {
-    final uri = Uri.parse('$baseUrl/$path');
-    final response = await http.post(
-      uri,
-      headers: _headers,
-      body: body != null ? json.encode(body) : null,
-    );
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(response.body) as Map<String, dynamic>;
-    }
-    throw ApiException(response.statusCode, _parseErrorMessage(response.body));
-  }
-
   String _parseErrorMessage(String body) {
     try {
       final parsed = json.decode(body) as Map<String, dynamic>;
@@ -83,9 +69,12 @@ class ApiService {
     if (lng != null) params['lng'] = lng.toString();
 
     final json = await _get('search', queryParams: params);
-    final data = (json['data'] as List<dynamic>)
-        .map((e) => Entity.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final rawData = json['data'];
+    final data = (rawData is List)
+        ? rawData
+            .map((e) => Entity.fromJson(e as Map<String, dynamic>))
+            .toList()
+        : <Entity>[];
     final meta = json['meta'] != null
         ? ApiMeta.fromJson(json['meta'] as Map<String, dynamic>)
         : null;
@@ -109,9 +98,12 @@ class ApiService {
     if (category != null && category.isNotEmpty) params['category'] = category;
 
     final json = await _get('nearby', queryParams: params);
-    final data = (json['data'] as List<dynamic>)
-        .map((e) => Entity.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final rawData = json['data'];
+    final data = (rawData is List)
+        ? rawData
+            .map((e) => Entity.fromJson(e as Map<String, dynamic>))
+            .toList()
+        : <Entity>[];
     final meta = json['meta'] != null
         ? ApiMeta.fromJson(json['meta'] as Map<String, dynamic>)
         : null;
@@ -147,7 +139,9 @@ class ApiService {
   // Get categories
   Future<List<Category>> getCategories() async {
     final json = await _get('categories');
-    return (json['data'] as List<dynamic>)
+    final rawData = json['data'];
+    if (rawData is! List) return [];
+    return rawData
         .map((e) => Category.fromJson(e as Map<String, dynamic>))
         .toList();
   }

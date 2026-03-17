@@ -94,12 +94,12 @@ class CrisisScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Get help right now',
                     style: TextStyle(
                       fontFamily: 'InstrumentSerif',
                       fontSize: 24,
-                      color: AppColors.navyBlue,
+                      color: AppColors.text(context),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -148,20 +148,20 @@ class CrisisScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   Container(
                     padding: const EdgeInsets.only(top: 20),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       border: Border(
-                        top: BorderSide(color: Color(0xFFDCE8F5)),
+                        top: BorderSide(color: AppColors.cardBorderOf(context)),
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Looking for local mental health services near you?',
                           style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 13,
-                            color: AppColors.grayText,
+                            color: AppColors.muted(context),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -169,12 +169,12 @@ class CrisisScreen extends StatelessWidget {
                           onTap: () {
                             // Pop back and they can search
                           },
-                          child: const Text(
+                          child: Text(
                             'Find mental health resources near me \u2192',
                             style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 14,
-                              color: AppColors.brightBlue,
+                              color: AppColors.accent(context),
                               decoration: TextDecoration.underline,
                             ),
                           ),
@@ -213,12 +213,12 @@ class _CrisisOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFDCE8F5), width: 1.5),
+          color: AppColors.card(context),
+          border: Border.all(color: AppColors.cardBorderOf(context), width: 1.5),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0D3B6E).withAlpha(13),
+              color: Colors.black.withAlpha(13),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -234,20 +234,20 @@ class _CrisisOption extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.navyBlue,
+                      color: AppColors.text(context),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 13,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                 ],

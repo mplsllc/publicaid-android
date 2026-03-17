@@ -103,7 +103,7 @@ class GuideScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBg,
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('Guided Help'),
         automaticallyImplyLeading: false,
@@ -140,7 +140,7 @@ class GuideScreen extends StatelessWidget {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.cardBorder,
+                      color: AppColors.cardBorderOf(context),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -148,7 +148,7 @@ class GuideScreen extends StatelessWidget {
                     widthFactor: 0.5,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.brightBlue,
+                        color: AppColors.accent(context),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -160,13 +160,13 @@ class GuideScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Heading
-          const Text(
+          Text(
             'What kind of help do you need?',
             style: TextStyle(
               fontFamily: 'InstrumentSerif',
               fontSize: 28,
               fontWeight: FontWeight.w400,
-              color: AppColors.navyBlue,
+              color: AppColors.text(context),
             ),
           ),
           const SizedBox(height: 16),
@@ -232,17 +232,17 @@ class _GuideOptionCard extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 56),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card(context),
           border: Border.all(
-            color: AppColors.cardBorder,
+            color: AppColors.cardBorderOf(context),
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0D0D3B6E),
+              color: Colors.black.withAlpha(13),
               blurRadius: 4,
-              offset: Offset(0, 1),
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -253,7 +253,7 @@ class _GuideOptionCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.brightBlue.withOpacity(0.06),
+                color: AppColors.heroBgOf(context),
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
@@ -270,20 +270,20 @@ class _GuideOptionCard extends StatelessWidget {
                 children: [
                   Text(
                     option.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navyBlue,
+                      color: AppColors.text(context),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     option.subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 13,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                 ],

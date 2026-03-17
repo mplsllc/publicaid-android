@@ -49,8 +49,8 @@ class AuthService extends ChangeNotifier {
     final userData = UserData.fromJson(data['user'] as Map<String, dynamic>);
 
     await _storage.write(key: 'auth_token', value: token);
+    // Store email for display only — never store passwords
     await _storage.write(key: 'saved_email', value: email);
-    await _storage.write(key: 'saved_password', value: password);
 
     _api.setAuthToken(token);
     _state = AuthState(isLoggedIn: true, token: token, user: userData);
@@ -65,19 +65,16 @@ class AuthService extends ChangeNotifier {
 
   Future<void> logout() async {
     await _storage.delete(key: 'auth_token');
-    // Keep email/password for biometric re-auth
+    await _storage.delete(key: 'saved_password'); // Clean up legacy key
     _api.setAuthToken(null);
     _state = const AuthState();
     notifyListeners();
   }
 
+  /// Biometric login requires a stored token (not password).
   Future<bool> hasSavedCredentials() async {
-    final email = await _storage.read(key: 'saved_email');
-    final password = await _storage.read(key: 'saved_password');
-    return email != null &&
-        email.isNotEmpty &&
-        password != null &&
-        password.isNotEmpty;
+    final token = await _storage.read(key: 'auth_token');
+    return token != null && token.isNotEmpty;
   }
 
   Future<bool> canUseBiometrics() async {
@@ -104,13 +101,23 @@ class AuthService extends ChangeNotifier {
       throw Exception('Biometric authentication failed');
     }
 
-    final email = await _storage.read(key: 'saved_email');
-    final password = await _storage.read(key: 'saved_password');
-    if (email == null || password == null) {
-      throw Exception('No saved credentials found');
+    final token = await _storage.read(key: 'auth_token');
+    if (token == null || token.isEmpty) {
+      throw Exception('No saved session found');
     }
 
-    await login(email, password);
+    // Validate the stored token against the server
+    _api.setAuthToken(token);
+    try {
+      final user = await _api.getMe();
+      _state = AuthState(isLoggedIn: true, token: token, user: user);
+      notifyListeners();
+    } catch (_) {
+      // Token expired or revoked — clear it
+      await _storage.delete(key: 'auth_token');
+      _api.setAuthToken(null);
+      throw Exception('Session expired. Please sign in again.');
+    }
   }
 
   Future<void> refreshUser() async {

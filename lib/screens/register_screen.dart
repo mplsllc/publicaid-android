@@ -51,20 +51,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (mounted) {
-        // Auto-login after registration
+        // Try auto-login with the same ALTCHA solution
+        bool autoLoggedIn = false;
         try {
           await widget.authService.login(
             _emailController.text.trim(),
             _passwordController.text,
+            altcha: _altchaSolution,
           );
+          autoLoggedIn = true;
         } catch (_) {
-          // If auto-login fails, still show success
+          // Auto-login may fail if email verification is required
         }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Account created successfully!'),
+            SnackBar(
+              content: Text(autoLoggedIn
+                  ? 'Account created successfully!'
+                  : 'Account created! Check your email to verify, then sign in.'),
               backgroundColor: AppColors.greenAccent,
             ),
           );
@@ -73,8 +78,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } on ApiException catch (e) {
       if (mounted) {
+        String msg;
+        switch (e.message) {
+          case 'email_already_registered':
+            msg = 'An account with this email already exists';
+            break;
+          case 'passwords_do_not_match':
+            msg = 'Passwords do not match';
+            break;
+          case 'verification_failed':
+            msg = 'Verification failed. Please try again.';
+            break;
+          case 'validation_error':
+            msg = 'Please check your input and try again.';
+            break;
+          default:
+            msg = 'Registration failed. Please try again.';
+        }
         setState(() {
-          _error = e.message;
+          _error = msg;
           _loading = false;
         });
       }
@@ -133,14 +155,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppColors.errorBg(context),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(color: AppColors.errorBorder(context)),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.error_outline,
-                          size: 18, color: Colors.red.shade700),
+                          size: 18, color: AppColors.errorText(context)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -148,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 14,
-                            color: Colors.red.shade700,
+                            color: AppColors.errorText(context),
                           ),
                         ),
                       ),
@@ -170,7 +192,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Email is required';
-                  if (!v.contains('@')) return 'Enter a valid email';
+                  final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                  if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
                   return null;
                 },
               ),

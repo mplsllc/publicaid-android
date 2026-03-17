@@ -141,7 +141,7 @@ class _BlogScreenState extends State<BlogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F0FA),
+      backgroundColor: AppColors.heroBgOf(context),
       appBar: AppBar(
         title: const Text('Blog'),
         automaticallyImplyLeading: false,
@@ -157,15 +157,15 @@ class _BlogScreenState extends State<BlogScreen> {
           ),
           slivers: [
             // Topic heading
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                 child: Text(
                   'Browse by topic',
                   style: TextStyle(
                     fontFamily: 'InstrumentSerif',
                     fontSize: 21,
-                    color: AppColors.navyBlue,
+                    color: AppColors.text(context),
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -197,23 +197,23 @@ class _BlogScreenState extends State<BlogScreen> {
                       Expanded(
                         child: Text(
                           _selectedTopic!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.navyBlue,
+                            color: AppColors.text(context),
                           ),
                         ),
                       ),
                       GestureDetector(
                         onTap: () => _loadArticles(),
-                        child: const Text(
+                        child: Text(
                           'All guides',
                           style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF4A90D9),
+                            color: AppColors.accent(context),
                           ),
                         ),
                       ),
@@ -223,15 +223,15 @@ class _BlogScreenState extends State<BlogScreen> {
               ),
             // Article list heading
             if (_selectedTopic == null)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
                   child: Text(
                     'Latest articles',
                     style: TextStyle(
                       fontFamily: 'InstrumentSerif',
                       fontSize: 21,
-                      color: AppColors.navyBlue,
+                      color: AppColors.text(context),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -248,11 +248,11 @@ class _BlogScreenState extends State<BlogScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.mediumGray),
+                      Icon(Icons.error_outline,
+                          size: 48, color: AppColors.muted(context)),
                       const SizedBox(height: 8),
                       Text(_error!,
-                          style: const TextStyle(color: AppColors.grayText)),
+                          style: TextStyle(color: AppColors.muted(context))),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: () =>
@@ -269,25 +269,25 @@ class _BlogScreenState extends State<BlogScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
+                      Text(
                         'No articles found.',
                         style: TextStyle(
                           fontFamily: 'DMSans',
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.navyBlue,
+                          color: AppColors.text(context),
                         ),
                       ),
                       if (_selectedTopic != null) ...[
                         const SizedBox(height: 8),
                         GestureDetector(
                           onTap: () => _loadArticles(),
-                          child: const Text(
+                          child: Text(
                             'View all guides',
                             style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 13,
-                              color: Color(0xFF4A90D9),
+                              color: AppColors.accent(context),
                             ),
                           ),
                         ),
@@ -316,10 +316,10 @@ class _BlogScreenState extends State<BlogScreen> {
                   child: Text(
                     '$_total article${_total == 1 ? '' : 's'}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
-                      color: AppColors.mediumGray,
+                      color: AppColors.muted(context),
                     ),
                   ),
                 ),
@@ -335,17 +335,17 @@ class _BlogScreenState extends State<BlogScreen> {
   Widget _buildTopicCard(_TopicCard topic) {
     final isSelected = _selectedTopic == topic.topic;
     return Material(
-      color: Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _onTopicTap(topic.topic),
         borderRadius: BorderRadius.circular(16),
-        splashColor: AppColors.heroBg,
+        splashColor: AppColors.heroBgOf(context),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.card(context),
             border: Border.all(
-              color: isSelected ? const Color(0xFF4A90D9) : Colors.transparent,
+              color: isSelected ? AppColors.accent(context) : Colors.transparent,
               width: 2,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -363,19 +363,19 @@ class _BlogScreenState extends State<BlogScreen> {
               const SizedBox(height: 4),
               Text(
                 topic.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.navyBlue,
+                  color: AppColors.text(context),
                 ),
               ),
               Text(
                 topic.subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 11,
-                  color: AppColors.mediumGray,
+                  color: AppColors.muted(context),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -405,17 +405,17 @@ class _BlogScreenState extends State<BlogScreen> {
     }
 
     return Material(
-      color: Colors.white,
+      color: AppColors.card(context),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: () => _onArticleTap(article),
         borderRadius: BorderRadius.circular(12),
-        splashColor: AppColors.heroBg,
+        splashColor: AppColors.heroBgOf(context),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.card(context),
             border: Border.all(
-              color: AppColors.cardBorder,
+              color: AppColors.cardBorderOf(context),
               width: 1.5,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -429,7 +429,7 @@ class _BlogScreenState extends State<BlogScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.heroBg,
+                  color: AppColors.heroBgOf(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
@@ -443,11 +443,11 @@ class _BlogScreenState extends State<BlogScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.navyBlue,
+                        color: AppColors.text(context),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -456,10 +456,10 @@ class _BlogScreenState extends State<BlogScreen> {
                       const SizedBox(height: 4),
                       Text(
                         description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'DMSans',
                           fontSize: 12,
-                          color: AppColors.grayText,
+                          color: AppColors.muted(context),
                           height: 1.3,
                         ),
                         maxLines: 2,
@@ -474,16 +474,16 @@ class _BlogScreenState extends State<BlogScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F0FA),
+                            color: AppColors.heroBgOf(context),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             topic,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF4A90D9),
+                              color: AppColors.accent(context),
                             ),
                           ),
                         ),
@@ -493,16 +493,16 @@ class _BlogScreenState extends State<BlogScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.heroBg,
+                              color: AppColors.heroBgOf(context),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               state,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'DMSans',
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF4A90D9),
+                                color: AppColors.accent(context),
                               ),
                             ),
                           ),
@@ -511,10 +511,10 @@ class _BlogScreenState extends State<BlogScreen> {
                         if (dateStr.isNotEmpty)
                           Text(
                             dateStr,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 10,
-                              color: AppColors.mediumGray,
+                              color: AppColors.muted(context),
                             ),
                           ),
                       ],
@@ -588,7 +588,7 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBg,
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: Text(
           _article?['title'] as String? ?? widget.title,
@@ -603,11 +603,11 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.mediumGray),
+                      Icon(Icons.error_outline,
+                          size: 48, color: AppColors.muted(context)),
                       const SizedBox(height: 8),
                       Text(_error!,
-                          style: const TextStyle(color: AppColors.grayText)),
+                          style: TextStyle(color: AppColors.muted(context))),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: () {
@@ -675,11 +675,11 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
           // Title
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'DMSans',
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: AppColors.navyBlue,
+              color: AppColors.text(context),
               height: 1.2,
             ),
           ),
@@ -695,16 +695,16 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0ECFA),
+                  color: AppColors.heroBgOf(context),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   topic,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1565C0),
+                    color: AppColors.accent(context),
                   ),
                 ),
               ),
@@ -713,26 +713,26 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0F0),
+                    color: AppColors.tagBgOf(context),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     state,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                 ),
               if (dateStr.isNotEmpty)
                 Text(
                   dateStr,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
-                    color: AppColors.mediumGray,
+                    color: AppColors.muted(context),
                   ),
                 ),
             ],
@@ -743,17 +743,17 @@ class _ArticleDetailScreenState extends State<_ArticleDetailScreen> {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: AppColors.cardBorder),
+              color: AppColors.card(context),
+              border: Border.all(color: AppColors.cardBorderOf(context)),
               borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.all(16),
             child: SelectableText(
               plainContent,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 15,
-                color: Color(0xFF374151),
+                color: AppColors.text(context),
                 height: 1.6,
               ),
             ),

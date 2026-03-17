@@ -1,7 +1,7 @@
 name: publicaid
 description: Find help near you — social services directory
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+100
 
 environment:
   sdk: ^3.11.0
@@ -29,6 +29,7 @@ dependencies:
   crypto: ^3.0.6
   firebase_core: ^4.5.0
   firebase_messaging: ^16.1.2
+  firebase_crashlytics: ^5.0.8
 
 dev_dependencies:
   flutter_test:

@@ -240,7 +240,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBg,
+      backgroundColor: AppColors.bg(context),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(110),
         child: Container(
@@ -294,7 +294,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               prefixIcon: const Icon(Icons.search,
                                   color: AppColors.mediumGray, size: 20),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: AppColors.surface(context),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 0),
                               border: OutlineInputBorder(
@@ -315,10 +315,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                 fontSize: 14,
                               ),
                             ),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 14,
-                              color: AppColors.navyBlue,
+                              color: AppColors.text(context),
                             ),
                             textInputAction: TextInputAction.search,
                             onSubmitted: (_) => _doSearch(),
@@ -331,8 +331,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         child: ElevatedButton(
                           onPressed: _doSearch,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.brightBlue,
+                            backgroundColor: AppColors.surface(context),
+                            foregroundColor: AppColors.accent(context),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -374,7 +374,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final hasFilters = _selectedCategory != null || _selectedState != null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.white,
+      color: AppColors.surface(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -402,10 +402,10 @@ class _SearchScreenState extends State<SearchScreen> {
           if (!_loading)
             Text(
               'Showing ${_results.length} of $_total result${_total == 1 ? '' : 's'}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 13,
-                color: Color(0xFF5A7A9E),
+                color: AppColors.muted(context),
               ),
             ),
         ],
@@ -487,6 +487,19 @@ class _SearchScreenState extends State<SearchScreen> {
         return EntityCard(
           entity: entity,
           onTap: () => _openDetail(entity),
+          isBookmarked: widget.bookmarkService?.isBookmarked(entity.id) ?? false,
+          onBookmark: widget.bookmarkService != null
+              ? () => widget.bookmarkService!.toggleBookmark(
+                    entity.id,
+                    name: entity.name,
+                    city: entity.city,
+                    state: entity.state,
+                    phone: entity.phone,
+                    categoryName: entity.categories.isNotEmpty
+                        ? entity.categories.first.name
+                        : null,
+                  )
+              : null,
         );
       },
     );

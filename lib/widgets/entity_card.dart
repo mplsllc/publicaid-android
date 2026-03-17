@@ -19,13 +19,26 @@ class EntityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkCardBorder : AppColors.cardBorder;
+    final accent = isDark ? AppColors.lightBlue : AppColors.brightBlue;
+    final muted = isDark ? AppColors.darkGrayText : AppColors.grayText;
+    final titleColor = isDark ? AppColors.lightBlue : AppColors.brightBlue;
+    final linkColor = isDark ? AppColors.lightBlue : AppColors.navyBlue;
+    final tagBg = isDark ? AppColors.darkTagBg : AppColors.tagBg;
+    final greenBg = isDark ? AppColors.darkGreenBg : AppColors.greenBg;
+    final greenText = isDark ? AppColors.lightGreen : AppColors.greenAccent;
+    final verifiedColor = isDark ? AppColors.lightBlue : const Color(0xFF4A90D9);
+    final inputBorder = isDark ? AppColors.darkInputBorder : AppColors.inputBorder;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFDCE8F5)),
+        color: cardBg,
+        border: Border.all(color: border),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(16),
@@ -44,11 +57,11 @@ class EntityCard extends StatelessWidget {
                   children: [
                     Text(
                       entity.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1565C0),
+                        color: titleColor,
                       ),
                     ),
                     if (entity.dataQuality?.isVerified == true)
@@ -56,16 +69,16 @@ class EntityCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFF4A90D9)),
+                          border: Border.all(color: verifiedColor),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
+                        child: Text(
                           'VERIFIED',
                           style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF4A90D9),
+                            color: verifiedColor,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -79,16 +92,16 @@ class EntityCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: greenBg,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     entity.distanceText!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF2E7D32),
+                      color: greenText,
                     ),
                   ),
                 ),
@@ -107,16 +120,16 @@ class EntityCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8EEF6),
+                    color: tagBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     cat.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF1565C0),
+                      color: accent,
                     ),
                   ),
                 );
@@ -132,10 +145,10 @@ class EntityCard extends StatelessWidget {
               entity.description!,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 14,
-                color: Color(0xFF5A7A9E),
+                color: muted,
               ),
             ),
           ],
@@ -146,16 +159,15 @@ class EntityCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 16, color: Color(0xFF5A7A9E)),
+                Icon(Icons.location_on_outlined, size: 16, color: muted),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     entity.fullAddress.replaceAll('\n', ', '),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 13,
-                      color: Color(0xFF5A7A9E),
+                      color: muted,
                     ),
                   ),
                 ),
@@ -169,16 +181,15 @@ class EntityCard extends StatelessWidget {
               onTap: () => _callPhone(entity.phone!),
               child: Row(
                 children: [
-                  const Icon(Icons.phone_outlined,
-                      size: 16, color: Color(0xFF1565C0)),
+                  Icon(Icons.phone_outlined, size: 16, color: accent),
                   const SizedBox(width: 4),
                   Text(
                     entity.phone!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1565C0),
+                      color: accent,
                     ),
                   ),
                 ],
@@ -192,28 +203,27 @@ class EntityCard extends StatelessWidget {
               onTap: () => _openWebsite(entity.website!),
               child: Row(
                 children: [
-                  const Icon(Icons.language,
-                      size: 16, color: Color(0xFF0D3B6E)),
+                  Icon(Icons.language, size: 16, color: linkColor),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
                       _formatDomain(entity.website!),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF0D3B6E),
+                        color: linkColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 2),
-                  const Text(
+                  Text(
                     '\u2197',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF0D3B6E),
+                      color: linkColor,
                     ),
                   ),
                 ],
@@ -223,7 +233,7 @@ class EntityCard extends StatelessWidget {
 
           // Divider before actions
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFDCE8F5)),
+          Divider(height: 1, color: border),
           const SizedBox(height: 12),
 
           // Row 5: Action buttons
@@ -237,7 +247,7 @@ class EntityCard extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onTap,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1565C0),
+                    backgroundColor: accent,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -264,8 +274,8 @@ class EntityCard extends StatelessWidget {
                     icon: const Icon(Icons.phone, size: 14),
                     label: const Text('Call'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE8F5E9),
-                      foregroundColor: const Color(0xFF2E7D32),
+                      backgroundColor: greenBg,
+                      foregroundColor: greenText,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -288,8 +298,8 @@ class EntityCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () => _openWebsite(entity.website!),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0D3B6E),
-                      side: const BorderSide(color: Color(0xFFD0DEF0)),
+                      foregroundColor: linkColor,
+                      side: BorderSide(color: inputBorder),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -316,8 +326,8 @@ class EntityCard extends StatelessWidget {
                   ),
                   label: const Text('Save'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.grayText,
-                    side: const BorderSide(color: Color(0xFFD0DEF0)),
+                    foregroundColor: muted,
+                    side: BorderSide(color: inputBorder),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -347,12 +357,16 @@ class EntityCard extends StatelessWidget {
   }
 
   void _callPhone(String phone) {
-    final uri = Uri.parse('tel:$phone');
-    launchUrl(uri);
+    final sanitized = phone.replaceAll(RegExp(r'[^\d\s\+\-().]'), '');
+    if (sanitized.isNotEmpty) {
+      launchUrl(Uri.parse('tel:$sanitized'));
+    }
   }
 
   void _openWebsite(String url) {
-    final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
-    launchUrl(uri, mode: LaunchMode.externalApplication);
+    final parsed = Uri.tryParse(url.startsWith('http') ? url : 'https://$url');
+    if (parsed != null && ['http', 'https'].contains(parsed.scheme)) {
+      launchUrl(parsed, mode: LaunchMode.externalApplication);
+    }
   }
 }

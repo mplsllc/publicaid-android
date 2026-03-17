@@ -97,7 +97,7 @@ class LocationService extends ChangeNotifier {
       await prefs.setDouble('last_lat', position.latitude);
       await prefs.setDouble('last_lng', position.longitude);
     } catch (e) {
-      debugPrint('Location error: $e');
+      if (kDebugMode) debugPrint('Location error: $e');
       // Fall back to stored location
       final prefs = await SharedPreferences.getInstance();
       final lat = prefs.getDouble('last_lat');

@@ -36,27 +36,27 @@ class BookmarksScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.bookmark_outline,
-                      size: 64, color: AppColors.mediumGray.withAlpha(128)),
+                      size: 64, color: AppColors.muted(context).withAlpha(128)),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No saved services yet',
                     style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.navyBlue,
+                      color: AppColors.text(context),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 48),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 48),
                     child: Text(
                       'Bookmark services to quickly find them later',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 14,
-                        color: AppColors.grayText,
+                        color: AppColors.muted(context),
                       ),
                     ),
                   ),
@@ -95,19 +95,19 @@ class BookmarksScreen extends StatelessWidget {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.heroBg,
+                        color: AppColors.heroBgOf(context),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.bookmark,
-                          color: AppColors.brightBlue, size: 22),
+                      child: Icon(Icons.bookmark,
+                          color: AppColors.accent(context), size: 22),
                     ),
                     title: Text(
                       bookmark.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.brightBlue,
+                        color: AppColors.accent(context),
                       ),
                     ),
                     subtitle: Column(
@@ -116,10 +116,10 @@ class BookmarksScreen extends StatelessWidget {
                         if (bookmark.categoryName != null)
                           Text(
                             bookmark.categoryName!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 12,
-                              color: AppColors.grayText,
+                              color: AppColors.muted(context),
                             ),
                           ),
                         if (bookmark.city != null || bookmark.state != null)
@@ -127,10 +127,10 @@ class BookmarksScreen extends StatelessWidget {
                             [bookmark.city, bookmark.state]
                                 .where((s) => s != null && s.isNotEmpty)
                                 .join(', '),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'DMSans',
                               fontSize: 12,
-                              color: AppColors.grayText,
+                              color: AppColors.muted(context),
                             ),
                           ),
                       ],

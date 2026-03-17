@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/bookmark_service.dart';
@@ -14,7 +13,6 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/docs_screen.dart';
 import 'widgets/bottom_nav.dart';
-import 'widgets/app_menu.dart';
 import 'theme.dart';
 
 class PublicaidApp extends StatefulWidget {
@@ -69,6 +67,8 @@ class _PublicaidAppState extends State<PublicaidApp> {
       title: 'Publicaid',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      darkTheme: buildDarkTheme(),
+      themeMode: ThemeMode.system,
       home: _initialized
           ? _AppShell(
               apiService: _apiService,

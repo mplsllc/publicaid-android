@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Login failed: $e';
+          _error = 'Unable to connect. Check your internet connection.';
           _loading = false;
         });
       }
@@ -172,14 +172,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: AppColors.errorBg(context),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(color: AppColors.errorBorder(context)),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.error_outline,
-                          size: 18, color: Colors.red.shade700),
+                          size: 18, color: AppColors.errorText(context)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontFamily: 'DMSans',
                             fontSize: 14,
-                            color: Colors.red.shade700,
+                            color: AppColors.errorText(context),
                           ),
                         ),
                       ),
@@ -208,7 +208,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Email is required';
-                  if (!v.contains('@')) return 'Enter a valid email';
+                  final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                  if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
                   return null;
                 },
               ),
@@ -246,9 +247,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.heroBg,
+                    color: AppColors.heroBgOf(context),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.cardBorder),
+                    border: Border.all(color: AppColors.cardBorderOf(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

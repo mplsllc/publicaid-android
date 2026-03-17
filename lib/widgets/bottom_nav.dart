@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../theme.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -11,24 +11,28 @@ class AppBottomNav extends StatelessWidget {
     required this.onTap,
   });
 
-  static const _activeColor = Color(0xFF1565C0);
-  static const _inactiveColor = Color(0xFF8BA8C8);
-
   void _handleTap(int index) {
     onTap(index);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? AppColors.darkCardBorder : AppColors.navBorder;
+    final shadowColor = isDark ? Colors.black26 : AppColors.navyBlue.withAlpha(18);
+    final activeColor = isDark ? AppColors.lightBlue : AppColors.brightBlue;
+    final inactiveColor = isDark ? AppColors.darkGrayText : AppColors.mediumGray;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(
-          top: BorderSide(color: Color(0xFFE2ECF7), width: 1),
+        color: bg,
+        border: Border(
+          top: BorderSide(color: borderColor, width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D3B6E).withAlpha(18),
+            color: shadowColor,
             blurRadius: 18,
             offset: const Offset(0, -4),
           ),
@@ -43,13 +47,11 @@ class AppBottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTab(0, Icons.home_outlined, Icons.home, 'Home'),
-              _buildTab(1, Icons.search, Icons.search, 'Search'),
-              _buildTab(
-                  2, Icons.help_outline, Icons.help, 'Get Help'),
-              _buildTab(
-                  3, Icons.menu_book_outlined, Icons.menu_book, 'Blog'),
-              _buildTab(4, Icons.phone_outlined, Icons.phone, 'Crisis'),
+              _buildTab(0, Icons.home_outlined, Icons.home, 'Home', activeColor, inactiveColor),
+              _buildTab(1, Icons.search, Icons.search, 'Search', activeColor, inactiveColor),
+              _buildTab(2, Icons.help_outline, Icons.help, 'Get Help', activeColor, inactiveColor),
+              _buildTab(3, Icons.menu_book_outlined, Icons.menu_book, 'Blog', activeColor, inactiveColor),
+              _buildTab(4, Icons.phone_outlined, Icons.phone, 'Crisis', activeColor, inactiveColor),
             ],
           ),
         ),
@@ -58,9 +60,10 @@ class AppBottomNav extends StatelessWidget {
   }
 
   Widget _buildTab(
-      int index, IconData icon, IconData activeIcon, String label) {
+      int index, IconData icon, IconData activeIcon, String label,
+      Color activeColor, Color inactiveColor) {
     final isActive = currentIndex == index;
-    final color = isActive ? _activeColor : _inactiveColor;
+    final color = isActive ? activeColor : inactiveColor;
 
     return Expanded(
       child: GestureDetector(
@@ -90,7 +93,7 @@ class AppBottomNav extends StatelessWidget {
               height: 4,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isActive ? _activeColor : Colors.transparent,
+                color: isActive ? activeColor : Colors.transparent,
               ),
             ),
           ],

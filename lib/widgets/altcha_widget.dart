@@ -94,13 +94,13 @@ class _AltchaWidgetState extends State<AltchaWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: AppColors.inputBorderOf(context)),
       ),
       child: Row(
         children: [
-          _buildCheckbox(),
+          _buildCheckbox(context),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -118,8 +118,8 @@ class _AltchaWidgetState extends State<AltchaWidget> {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: _state == AltchaState.verified
-                        ? AppColors.greenAccent
-                        : AppColors.navyBlue,
+                        ? AppColors.greenTextOf(context)
+                        : AppColors.text(context),
                   ),
                 ),
                 if (_error != null) ...[
@@ -141,7 +141,7 @@ class _AltchaWidgetState extends State<AltchaWidget> {
     );
   }
 
-  Widget _buildCheckbox() {
+  Widget _buildCheckbox(BuildContext context) {
     switch (_state) {
       case AltchaState.idle:
       case AltchaState.error:
@@ -154,7 +154,7 @@ class _AltchaWidgetState extends State<AltchaWidget> {
               border: Border.all(
                 color: _state == AltchaState.error
                     ? Colors.red
-                    : AppColors.inputBorder,
+                    : AppColors.inputBorderOf(context),
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(4),
