@@ -297,11 +297,11 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
       if (result == null || result.files.isEmpty) return;
       final file = result.files.first;
 
-      const maxSize = 25 * 1024 * 1024;
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('File too large (max 25 MB)')),
+            const SnackBar(content: Text('File too large (max 10 MB)')),
           );
         }
         return;
