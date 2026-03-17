@@ -11,7 +11,8 @@ import 'package:pointycastle/export.dart';
 
 class VaultService {
   static const String _userBaseUrl = 'https://publicaid.org/api/user';
-  static const int _pbkdf2Iterations = 100000;
+  static const int _passwordIterations = 600000;
+  static const int _pinIterations = 100000;
   static const int _keyLength = 32;
   static const int _ivLength = 12;
   static const int _tagLength = 16;
@@ -23,6 +24,7 @@ class VaultService {
   // In-memory state (only populated when unlocked)
   Uint8List? _encryptionKey;
   List<Map<String, dynamic>>? _documents;
+  String? _temporaryPassword; // held between unlockWithPassword and setPin
 
   VaultService({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();
@@ -42,72 +44,151 @@ class VaultService {
     _authToken = token;
   }
 
-  /// Create a new vault: generate salt, hash the PIN, persist both, and upload
-  /// an empty manifest.
-  Future<void> createVault(String pin) async {
-    final salt = _randomBytes(_saltLength);
-    final pinHash = _hashPin(pin, salt);
+  /// Create a new vault with a strong password (encrypts files on server)
+  /// and a 6-digit PIN (protects the password on device).
+  Future<void> createVault(String password, String pin) async {
+    // Salt for password → AES key derivation
+    final vaultSalt = _randomBytes(_saltLength);
+    await _storage.write(key: 'vault_salt', value: base64Encode(vaultSalt));
 
-    await _storage.write(key: 'vault_salt', value: base64Encode(salt));
+    // Salt for PIN hashing & PIN key derivation
+    final pinSalt = _randomBytes(_saltLength);
+    await _storage.write(key: 'vault_pin_salt', value: base64Encode(pinSalt));
+
+    // Hash PIN for quick verification
+    final pinHash = _hashPin(pin, pinSalt);
     await _storage.write(key: 'vault_pin_hash', value: pinHash);
+
+    // Derive PIN key and encrypt the password
+    final pinKey = _derivePinKey(pin, pinSalt);
+    final encryptedPassword = _encryptWithKey(
+      Uint8List.fromList(utf8.encode(password)),
+      pinKey,
+    );
+    await _storage.write(
+      key: 'vault_encrypted_password',
+      value: base64Encode(encryptedPassword),
+    );
+
     await _storage.write(key: 'vault_manifest_v2', value: 'true');
 
-    _encryptionKey = _deriveKey(pin, salt);
+    // Derive the real AES encryption key from the password
+    _encryptionKey = _deriveKey(password, vaultSalt);
     _documents = [];
     await _uploadManifest();
   }
 
-  /// Unlock the vault: verify the PIN, derive the key, download and decrypt
-  /// the manifest. Returns `true` on success, `false` if the PIN is wrong.
-  Future<bool> unlockVault(String pin) async {
+  /// Unlock the vault with a 6-digit PIN (daily use).
+  /// PIN → verify → decrypt password → derive AES key → download manifest.
+  Future<bool> unlockWithPin(String pin) async {
     final storedHash = await _storage.read(key: 'vault_pin_hash');
-    final saltB64 = await _storage.read(key: 'vault_salt');
+    final pinSaltB64 = await _storage.read(key: 'vault_pin_salt');
+    final encPwdB64 = await _storage.read(key: 'vault_encrypted_password');
+    final vaultSaltB64 = await _storage.read(key: 'vault_salt');
 
-    if (storedHash == null || saltB64 == null) return false;
-
-    final salt = base64Decode(saltB64);
-    final pinHash = _hashPin(pin, salt);
-
-    if (pinHash != storedHash) return false;
-
-    _encryptionKey = _deriveKey(pin, salt);
-
-    final manifestBytes = await _downloadManifest();
-    if (manifestBytes != null && manifestBytes.isNotEmpty) {
-      final v2Flag = await _storage.read(key: 'vault_manifest_v2');
-      final hasLocalSalt = saltB64.isNotEmpty;
-
-      Uint8List encryptedData;
-
-      if (v2Flag == 'true') {
-        // v2 format: first 32 bytes are salt, remainder is encrypted manifest.
-        encryptedData = manifestBytes.sublist(_saltLength);
-      } else if (!hasLocalSalt) {
-        // New device recovery: no v2 flag AND no local salt.
-        // Strip the salt prefix, store it locally, set v2 flag.
-        final recoveredSalt = manifestBytes.sublist(0, _saltLength);
-        await _storage.write(
-            key: 'vault_salt', value: base64Encode(recoveredSalt));
-        await _storage.write(key: 'vault_manifest_v2', value: 'true');
-        encryptedData = manifestBytes.sublist(_saltLength);
-      } else {
-        // Legacy vault: v2 flag missing but local salt present.
-        // Decrypt entire blob as-is (no salt prefix).
-        encryptedData = manifestBytes;
-      }
-
-      final decrypted = _decrypt(encryptedData);
-      final manifestJson =
-          json.decode(utf8.decode(decrypted)) as Map<String, dynamic>;
-      final rawDocs = manifestJson['documents'] as List<dynamic>? ?? [];
-      _documents = rawDocs
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-    } else {
-      _documents = [];
+    if (storedHash == null ||
+        pinSaltB64 == null ||
+        encPwdB64 == null ||
+        vaultSaltB64 == null) {
+      return false;
     }
 
+    final pinSalt = base64Decode(pinSaltB64);
+    final pinHash = _hashPin(pin, pinSalt);
+    if (pinHash != storedHash) return false;
+
+    // Derive PIN key and decrypt the password
+    final pinKey = _derivePinKey(pin, pinSalt);
+    final String password;
+    try {
+      final decryptedBytes = _decryptWithKey(base64Decode(encPwdB64), pinKey);
+      password = utf8.decode(decryptedBytes);
+    } catch (_) {
+      return false;
+    }
+
+    // Derive the real AES encryption key from the password
+    final vaultSalt = base64Decode(vaultSaltB64);
+    _encryptionKey = _deriveKey(password, vaultSalt);
+
+    await _downloadAndDecryptManifest(vaultSaltB64);
     return true;
+  }
+
+  /// Unlock the vault with the full password (recovery on new device).
+  /// After success, caller should prompt for a new PIN via [setPin].
+  Future<bool> unlockWithPassword(String password) async {
+    String? vaultSaltB64 = await _storage.read(key: 'vault_salt');
+
+    // If no local salt, try to extract it from the remote manifest.
+    Uint8List? manifestBytes;
+    if (vaultSaltB64 == null || vaultSaltB64.isEmpty) {
+      manifestBytes = await _downloadManifest();
+      if (manifestBytes == null || manifestBytes.length < _saltLength) {
+        return false;
+      }
+      final recoveredSalt = manifestBytes.sublist(0, _saltLength);
+      vaultSaltB64 = base64Encode(recoveredSalt);
+      await _storage.write(key: 'vault_salt', value: vaultSaltB64);
+      await _storage.write(key: 'vault_manifest_v2', value: 'true');
+    }
+
+    final vaultSalt = base64Decode(vaultSaltB64);
+    _encryptionKey = _deriveKey(password, vaultSalt);
+
+    // Try to download and decrypt — if decryption fails, wrong password.
+    try {
+      await _downloadAndDecryptManifest(vaultSaltB64,
+          prefetchedManifest: manifestBytes);
+    } catch (_) {
+      _encryptionKey = null;
+      return false;
+    }
+
+    // Hold the password temporarily so setPin can encrypt it.
+    _temporaryPassword = password;
+    return true;
+  }
+
+  /// Set or change the 6-digit PIN after a password-based unlock.
+  /// Encrypts the password with the new PIN key and stores it locally.
+  Future<void> setPin(String pin) async {
+    if (_temporaryPassword == null && !isUnlocked) {
+      throw VaultException(0, 'No password available — unlock first');
+    }
+
+    // If called right after unlockWithPassword, use _temporaryPassword.
+    // Otherwise this is a PIN change; caller must supply password separately.
+    final password = _temporaryPassword!;
+
+    final pinSalt = _randomBytes(_saltLength);
+    await _storage.write(key: 'vault_pin_salt', value: base64Encode(pinSalt));
+
+    final pinHash = _hashPin(pin, pinSalt);
+    await _storage.write(key: 'vault_pin_hash', value: pinHash);
+
+    final pinKey = _derivePinKey(pin, pinSalt);
+    final encryptedPassword = _encryptWithKey(
+      Uint8List.fromList(utf8.encode(password)),
+      pinKey,
+    );
+    await _storage.write(
+      key: 'vault_encrypted_password',
+      value: base64Encode(encryptedPassword),
+    );
+
+    _temporaryPassword = null;
+  }
+
+  /// Check if a vault manifest exists on the server (for recovery detection).
+  Future<bool> hasRemoteVault() async {
+    try {
+      final uri = Uri.parse('$_userBaseUrl/vault/manifest');
+      final response = await http.get(uri, headers: _authHeaders);
+      return response.statusCode >= 200 && response.statusCode < 400;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Lock the vault: securely wipe key material and clear documents.
@@ -118,6 +199,7 @@ class VaultService {
       }
       _encryptionKey = null;
     }
+    _temporaryPassword = null;
     _documents = null;
   }
 
@@ -276,9 +358,17 @@ class VaultService {
   // Private helpers — key derivation
   // ---------------------------------------------------------------------------
 
-  Uint8List _deriveKey(String pin, Uint8List salt) {
+  /// Derive the main AES-256 encryption key from the user's password.
+  Uint8List _deriveKey(String password, Uint8List salt) {
     final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, _pbkdf2Iterations, _keyLength));
+      ..init(Pbkdf2Parameters(salt, _passwordIterations, _keyLength));
+    return derivator.process(Uint8List.fromList(utf8.encode(password)));
+  }
+
+  /// Derive a key from the 6-digit PIN (used to encrypt the password locally).
+  Uint8List _derivePinKey(String pin, Uint8List salt) {
+    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
+      ..init(Pbkdf2Parameters(salt, _pinIterations, _keyLength));
     return derivator.process(Uint8List.fromList(utf8.encode(pin)));
   }
 
@@ -332,6 +422,91 @@ class VaultService {
     cipher.doFinal(output, len);
 
     return output.sublist(0, output.length - _tagLength);
+  }
+
+  /// Encrypt arbitrary data with a given key (used for PIN-key encryption).
+  Uint8List _encryptWithKey(Uint8List plaintext, Uint8List key) {
+    final iv = _randomBytes(_ivLength);
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        true,
+        AEADParameters(
+          KeyParameter(key),
+          _tagLength * 8,
+          iv,
+          Uint8List(0),
+        ),
+      );
+
+    final output = Uint8List(cipher.getOutputSize(plaintext.length));
+    final len = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
+    cipher.doFinal(output, len);
+
+    return Uint8List.fromList([...iv, ...output]);
+  }
+
+  /// Decrypt arbitrary data with a given key (used for PIN-key decryption).
+  Uint8List _decryptWithKey(Uint8List data, Uint8List key) {
+    if (data.length < _ivLength + _tagLength) {
+      throw VaultException(0, 'Encrypted data too short');
+    }
+
+    final iv = data.sublist(0, _ivLength);
+    final ciphertextWithTag = data.sublist(_ivLength);
+
+    final cipher = GCMBlockCipher(AESEngine())
+      ..init(
+        false,
+        AEADParameters(
+          KeyParameter(key),
+          _tagLength * 8,
+          iv,
+          Uint8List(0),
+        ),
+      );
+
+    final output = Uint8List(cipher.getOutputSize(ciphertextWithTag.length));
+    final len = cipher.processBytes(
+        ciphertextWithTag, 0, ciphertextWithTag.length, output, 0);
+    cipher.doFinal(output, len);
+
+    return output.sublist(0, output.length - _tagLength);
+  }
+
+  /// Download the remote manifest and decrypt it into [_documents].
+  /// Handles v2 salt-prefix format and legacy migration.
+  Future<void> _downloadAndDecryptManifest(
+    String vaultSaltB64, {
+    Uint8List? prefetchedManifest,
+  }) async {
+    final manifestBytes = prefetchedManifest ?? await _downloadManifest();
+    if (manifestBytes != null && manifestBytes.isNotEmpty) {
+      final v2Flag = await _storage.read(key: 'vault_manifest_v2');
+
+      Uint8List encryptedData;
+
+      if (v2Flag == 'true') {
+        encryptedData = manifestBytes.sublist(_saltLength);
+      } else if (vaultSaltB64.isEmpty) {
+        final recoveredSalt = manifestBytes.sublist(0, _saltLength);
+        await _storage.write(
+            key: 'vault_salt', value: base64Encode(recoveredSalt));
+        await _storage.write(key: 'vault_manifest_v2', value: 'true');
+        encryptedData = manifestBytes.sublist(_saltLength);
+      } else {
+        encryptedData = manifestBytes;
+      }
+
+      final decrypted = _decrypt(encryptedData);
+      final manifestJson =
+          json.decode(utf8.decode(decrypted)) as Map<String, dynamic>;
+      final rawDocs = manifestJson['documents'] as List<dynamic>? ?? [];
+      _documents = rawDocs
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } else {
+      _documents = [];
+    }
   }
 
   // ---------------------------------------------------------------------------
