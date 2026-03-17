@@ -118,6 +118,12 @@ class ApiService {
     return Entity.fromJson(json['data'] as Map<String, dynamic>);
   }
 
+  // Get entity by slug
+  Future<Entity> getEntityBySlug(String slug) async {
+    final json = await _get('entities/by-slug/$slug');
+    return Entity.fromJson(json['data'] as Map<String, dynamic>);
+  }
+
   // Get entity services
   Future<List<EntityService>> getEntityServices(String id) async {
     final json = await _get('entities/$id/services');

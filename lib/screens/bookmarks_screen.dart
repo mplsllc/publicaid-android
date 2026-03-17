@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../services/bookmark_service.dart';
+import '../services/location_service.dart';
 import '../theme.dart';
 import 'detail_screen.dart';
 
 class BookmarksScreen extends StatelessWidget {
   final BookmarkService bookmarkService;
   final ApiService apiService;
+  final LocationService? locationService;
 
   const BookmarksScreen({
     super.key,
     required this.bookmarkService,
     required this.apiService,
+    this.locationService,
   });
 
   @override
@@ -77,6 +80,7 @@ class BookmarksScreen extends StatelessWidget {
                   bookmark: bookmark,
                   apiService: apiService,
                   bookmarkService: bookmarkService,
+                  locationService: locationService,
                 );
               },
             ),
@@ -91,11 +95,13 @@ class _BookmarkCard extends StatelessWidget {
   final dynamic bookmark;
   final ApiService apiService;
   final BookmarkService bookmarkService;
+  final LocationService? locationService;
 
   const _BookmarkCard({
     required this.bookmark,
     required this.apiService,
     required this.bookmarkService,
+    this.locationService,
   });
 
   Future<void> _launchDirections() async {
@@ -158,6 +164,7 @@ class _BookmarkCard extends StatelessWidget {
                                 entityId: bookmark.entityId,
                                 entityName: bookmark.name,
                                 bookmarkService: bookmarkService,
+                                locationService: locationService,
                               ),
                             ),
                           );

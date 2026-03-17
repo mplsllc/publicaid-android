@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'services/api_service.dart';
+import 'services/deep_link_service.dart';
 import 'services/auth_service.dart';
 import 'services/bookmark_service.dart';
 import 'services/location_service.dart';
@@ -36,6 +39,9 @@ class _PublicaidAppState extends State<PublicaidApp> {
   late final VaultService _vaultService;
   late final NotificationService _notificationService;
   late final LocationService _locationService;
+  late final DeepLinkService _deepLinkService;
+  StreamSubscription<Uri>? _deepLinkSub;
+  final _tabNotifier = ValueNotifier<int>(-1);
   bool _initialized = false;
 
   @override
@@ -71,11 +77,42 @@ class _PublicaidAppState extends State<PublicaidApp> {
             bookmarkService: _bookmarkService,
             authService: _authService,
             planService: _planService,
+            locationService: _locationService,
           ),
         ),
       );
     };
+
+    // Deep links
+    _deepLinkService = DeepLinkService(
+      apiService: _apiService,
+      locationService: _locationService,
+      authService: _authService,
+      bookmarkService: _bookmarkService,
+      planService: _planService,
+      navigatorKey: _navigatorKey,
+      switchTab: _switchToTab,
+    );
+
+    // Cold-start: check if app was launched from a deep link
+    final appLinks = AppLinks();
+    final initialUri = await appLinks.getInitialLink();
+    if (initialUri != null) {
+      _deepLinkService.handleUri(initialUri);
+    }
+
+    // Warm: listen for deep links while app is running
+    _deepLinkSub = appLinks.uriLinkStream.listen((uri) {
+      _deepLinkService.handleUri(uri);
+    });
+
     if (mounted) setState(() => _initialized = true);
+  }
+
+  void _switchToTab(int index) {
+    // Pop back to root if needed, then switch tab via notifier
+    _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    _tabNotifier.value = index;
   }
 
   void _onAuthChanged() {
@@ -86,6 +123,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
 
   @override
   void dispose() {
+    _deepLinkSub?.cancel();
     _authService.removeListener(_onAuthChanged);
     _authService.dispose();
     _bookmarkService.dispose();
@@ -111,6 +149,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
               planService: _planService,
               vaultService: _vaultService,
               locationService: _locationService,
+              tabNotifier: _tabNotifier,
             )
           : const _SplashScreen(),
     );
@@ -155,6 +194,7 @@ class _AppShell extends StatefulWidget {
   final PlanService planService;
   final VaultService vaultService;
   final LocationService locationService;
+  final ValueNotifier<int> tabNotifier;
 
   const _AppShell({
     required this.apiService,
@@ -163,6 +203,7 @@ class _AppShell extends StatefulWidget {
     required this.planService,
     required this.vaultService,
     required this.locationService,
+    required this.tabNotifier,
   });
 
   @override
@@ -177,6 +218,7 @@ class _AppShellState extends State<_AppShell> {
   @override
   void initState() {
     super.initState();
+    widget.tabNotifier.addListener(_onTabSwitch);
     _screens = [
       HomeScreen(
         apiService: widget.apiService,
@@ -213,6 +255,19 @@ class _AppShellState extends State<_AppShell> {
     ];
   }
 
+  @override
+  void dispose() {
+    widget.tabNotifier.removeListener(_onTabSwitch);
+    super.dispose();
+  }
+
+  void _onTabSwitch() {
+    final index = widget.tabNotifier.value;
+    if (index >= 0 && index < _screens.length) {
+      setState(() => _currentIndex = index);
+    }
+  }
+
   void _handleMenuNav(String route) {
     switch (route) {
       case 'home':
@@ -247,6 +302,7 @@ class _AppShellState extends State<_AppShell> {
             builder: (_) => PlanScreen(
               planService: widget.planService,
               apiService: widget.apiService,
+              locationService: widget.locationService,
             ),
           ),
         );

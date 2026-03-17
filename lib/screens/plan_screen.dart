@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plan.dart';
 import '../services/api_service.dart';
+import '../services/location_service.dart';
 import '../services/plan_service.dart';
 import '../theme.dart';
 import 'detail_screen.dart';
@@ -8,11 +9,13 @@ import 'detail_screen.dart';
 class PlanScreen extends StatefulWidget {
   final PlanService planService;
   final ApiService apiService;
+  final LocationService? locationService;
 
   const PlanScreen({
     super.key,
     required this.planService,
     required this.apiService,
+    this.locationService,
   });
 
   @override
@@ -94,6 +97,7 @@ class _PlanScreenState extends State<PlanScreen> {
           entityId: item.entityId,
           entityName: item.entityName,
           planService: widget.planService,
+          locationService: widget.locationService,
         ),
       ),
     );

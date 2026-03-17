@@ -236,6 +236,7 @@ class _SearchScreenState extends State<SearchScreen> {
           authService: widget.authService,
           bookmarkService: widget.bookmarkService,
           planService: widget.planService,
+          locationService: widget.locationService,
         ),
       ),
     );

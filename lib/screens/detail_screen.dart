@@ -6,8 +6,10 @@ import '../models/entity.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/bookmark_service.dart';
+import '../services/location_service.dart';
 import '../services/plan_service.dart';
 import '../theme.dart';
+import 'search_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final ApiService apiService;
@@ -16,6 +18,7 @@ class DetailScreen extends StatefulWidget {
   final BookmarkService? bookmarkService;
   final AuthService? authService;
   final PlanService? planService;
+  final LocationService? locationService;
 
   const DetailScreen({
     super.key,
@@ -25,6 +28,7 @@ class DetailScreen extends StatefulWidget {
     this.bookmarkService,
     this.authService,
     this.planService,
+    this.locationService,
   });
 
   @override
@@ -509,10 +513,26 @@ class _DetailScreenState extends State<DetailScreen> {
                           avatar: Icon(Icons.search, size: 16,
                               color: AppColors.accent(context)),
                           onPressed: () {
-                            launchUrl(
-                              Uri.parse('https://publicaid.org/search?category=${c.slug}'),
-                              mode: LaunchMode.inAppBrowserView,
-                            );
+                            if (widget.locationService != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SearchScreen(
+                                    apiService: widget.apiService,
+                                    locationService: widget.locationService!,
+                                    authService: widget.authService,
+                                    bookmarkService: widget.bookmarkService,
+                                    planService: widget.planService,
+                                    initialCategory: c.slug,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              launchUrl(
+                                Uri.parse('https://publicaid.org/search?category=${c.slug}'),
+                                mode: LaunchMode.inAppBrowserView,
+                              );
+                            }
                           },
                         ))
                     .toList(),
