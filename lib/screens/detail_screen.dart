@@ -388,23 +388,34 @@ class _DetailScreenState extends State<DetailScreen> {
           if (e.fullAddress.isNotEmpty) ...[
             const SizedBox(height: 20),
             _buildSection('Address', [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.location_on_outlined,
-                      size: 18, color: AppColors.muted(context)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      e.fullAddress,
-                      style: TextStyle(
-                        fontFamily: 'DMSans',
-                        fontSize: 14,
-                        color: AppColors.text(context),
+              GestureDetector(
+                onTap: (e.lat != null && e.lng != null) ? _openDirections : null,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.location_on_outlined,
+                        size: 18,
+                        color: (e.lat != null && e.lng != null)
+                            ? AppColors.accent(context)
+                            : AppColors.muted(context)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        e.fullAddress,
+                        style: TextStyle(
+                          fontFamily: 'DMSans',
+                          fontSize: 14,
+                          color: (e.lat != null && e.lng != null)
+                              ? AppColors.accent(context)
+                              : AppColors.text(context),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    if (e.lat != null && e.lng != null)
+                      Icon(Icons.directions_outlined,
+                          size: 18, color: AppColors.accent(context)),
+                  ],
+                ),
               ),
             ]),
           ],
@@ -493,7 +504,17 @@ class _DetailScreenState extends State<DetailScreen> {
                 spacing: 8,
                 runSpacing: 6,
                 children: e.categories
-                    .map((c) => Chip(label: Text(c.name)))
+                    .map((c) => ActionChip(
+                          label: Text(c.name),
+                          avatar: Icon(Icons.search, size: 16,
+                              color: AppColors.accent(context)),
+                          onPressed: () {
+                            launchUrl(
+                              Uri.parse('https://publicaid.org/search?category=${c.slug}'),
+                              mode: LaunchMode.inAppBrowserView,
+                            );
+                          },
+                        ))
                     .toList(),
               ),
             ]),
