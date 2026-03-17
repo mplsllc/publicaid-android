@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:pointycastle/export.dart';
@@ -48,6 +50,7 @@ class VaultService {
 
     await _storage.write(key: 'vault_salt', value: base64Encode(salt));
     await _storage.write(key: 'vault_pin_hash', value: pinHash);
+    await _storage.write(key: 'vault_manifest_v2', value: 'true');
 
     _encryptionKey = _deriveKey(pin, salt);
     _documents = [];
@@ -71,7 +74,29 @@ class VaultService {
 
     final manifestBytes = await _downloadManifest();
     if (manifestBytes != null && manifestBytes.isNotEmpty) {
-      final decrypted = _decrypt(manifestBytes);
+      final v2Flag = await _storage.read(key: 'vault_manifest_v2');
+      final hasLocalSalt = saltB64.isNotEmpty;
+
+      Uint8List encryptedData;
+
+      if (v2Flag == 'true') {
+        // v2 format: first 32 bytes are salt, remainder is encrypted manifest.
+        encryptedData = manifestBytes.sublist(_saltLength);
+      } else if (!hasLocalSalt) {
+        // New device recovery: no v2 flag AND no local salt.
+        // Strip the salt prefix, store it locally, set v2 flag.
+        final recoveredSalt = manifestBytes.sublist(0, _saltLength);
+        await _storage.write(
+            key: 'vault_salt', value: base64Encode(recoveredSalt));
+        await _storage.write(key: 'vault_manifest_v2', value: 'true');
+        encryptedData = manifestBytes.sublist(_saltLength);
+      } else {
+        // Legacy vault: v2 flag missing but local salt present.
+        // Decrypt entire blob as-is (no salt prefix).
+        encryptedData = manifestBytes;
+      }
+
+      final decrypted = _decrypt(encryptedData);
       final manifestJson =
           json.decode(utf8.decode(decrypted)) as Map<String, dynamic>;
       final rawDocs = manifestJson['documents'] as List<dynamic>? ?? [];
@@ -153,6 +178,38 @@ class VaultService {
     }
     throw VaultException(
         response.statusCode, 'Failed to download file: ${response.statusCode}');
+  }
+
+  /// Decrypt a file and write it to a temporary path. Returns the full path.
+  Future<String> decryptToTempFile(String fileId) async {
+    _assertUnlocked();
+
+    // Look up the document to get the original filename / title.
+    final doc = _documents!.firstWhere(
+      (d) => d['id'] == fileId,
+      orElse: () => throw VaultException(404, 'Document not found'),
+    );
+
+    final decryptedBytes = await downloadFile(fileId);
+    final title = doc['title'] as String? ?? 'file';
+
+    // Extract extension from the title (e.g. "photo.jpg" → "jpg").
+    final dotIndex = title.lastIndexOf('.');
+    final ext = dotIndex != -1 && dotIndex < title.length - 1
+        ? title.substring(dotIndex + 1)
+        : 'bin';
+
+    // Generate a short random ID for the temp filename.
+    final rng = Random.secure();
+    final randomId =
+        List.generate(8, (_) => rng.nextInt(256).toRadixString(16).padLeft(2, '0'))
+            .join();
+
+    final tempDir = await getTemporaryDirectory();
+    final tempPath = '${tempDir.path}/vault_temp_$randomId.$ext';
+
+    await File(tempPath).writeAsBytes(decryptedBytes);
+    return tempPath;
   }
 
   /// Update an existing note in the manifest.
@@ -285,6 +342,11 @@ class VaultService {
     final manifest = json.encode({'documents': _documents});
     final encrypted = _encrypt(Uint8List.fromList(utf8.encode(manifest)));
 
+    // Read the salt and prepend it to the encrypted data (v2 format).
+    final saltB64 = await _storage.read(key: 'vault_salt');
+    final salt = base64Decode(saltB64!);
+    final payload = Uint8List.fromList([...salt, ...encrypted]);
+
     final uri = Uri.parse('$_userBaseUrl/vault/manifest');
     final response = await http.put(
       uri,
@@ -292,13 +354,16 @@ class VaultService {
         ..._authHeaders,
         'Content-Type': 'application/octet-stream',
       },
-      body: encrypted,
+      body: payload,
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw VaultException(
           response.statusCode, 'Failed to upload manifest');
     }
+
+    // Mark this device as using the v2 salt-prefixed manifest format.
+    await _storage.write(key: 'vault_manifest_v2', value: 'true');
   }
 
   Future<Uint8List?> _downloadManifest() async {
