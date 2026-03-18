@@ -56,6 +56,112 @@ class VaultService {
   Future<bool> hasSalt() async =>
       (await _storage.read(key: 'vault_salt')) != null;
 
+  // ---------------------------------------------------------------------------
+  // Backup codes
+  // ---------------------------------------------------------------------------
+
+  /// Generate 8 one-time backup codes in XXXX-XXXX format.
+  /// Pure — does not write to storage. Call [saveBackupCodes] after vault creation.
+  List<String> generateBackupCodes() {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final bytes = _randomBytes(64); // one byte per character position
+    final codes = <String>[];
+    for (var i = 0; i < 8; i++) {
+      final a = String.fromCharCodes(
+        bytes.sublist(i * 8, i * 8 + 4).map((b) => charset.codeUnitAt(b % charset.length)),
+      );
+      final b = String.fromCharCodes(
+        bytes.sublist(i * 8 + 4, i * 8 + 8).map((b) => charset.codeUnitAt(b % charset.length)),
+      );
+      codes.add('$a-$b');
+    }
+    return codes;
+  }
+
+  /// Persist backup codes encrypted under the vault password.
+  /// Must be called after [createVault] (requires vault_salt in secure storage).
+  Future<void> saveBackupCodes(List<String> codes, String vaultPassword) async {
+    final vaultSaltB64 = await _storage.read(key: 'vault_salt');
+    if (vaultSaltB64 == null) {
+      throw VaultException(0, 'No vault salt — call createVault first');
+    }
+    final vaultSalt = base64Decode(vaultSaltB64);
+
+    for (var i = 0; i < codes.length; i++) {
+      final normalized = codes[i].replaceAll('-', '').toUpperCase();
+
+      // Store hash for verification
+      final hash = sha256.convert(utf8.encode(normalized)).toString();
+      await _storage.write(key: 'backup_code_${i}_hash', value: hash);
+
+      // Derive key from code + vault salt, encrypt vault password
+      // _encryptWithKey prepends a random 12-byte IV — format: IV(12) + ciphertext + tag(16)
+      final codeKey = _derivePinKey(normalized, vaultSalt);
+      final encBlob = _encryptWithKey(Uint8List.fromList(utf8.encode(vaultPassword)), codeKey);
+      await _storage.write(key: 'backup_code_${i}_enc', value: base64Encode(encBlob));
+    }
+
+    await _storage.write(
+      key: 'backup_codes_remaining',
+      value: List.generate(codes.length, (i) => '$i').join(','),
+    );
+  }
+
+  /// Returns true if at least one backup code has not yet been used.
+  Future<bool> hasBackupCodes() async {
+    final remaining = await _storage.read(key: 'backup_codes_remaining');
+    return remaining != null && remaining.isNotEmpty;
+  }
+
+  /// Attempt recovery with a backup code.
+  /// On success, populates [_temporaryPassword] so the caller can invoke [setPin].
+  /// Marks the used code as consumed (one-time use).
+  /// Returns false if the code is invalid or all codes are exhausted.
+  Future<bool> recoverWithBackupCode(String code) async {
+    final remaining = await _storage.read(key: 'backup_codes_remaining');
+    if (remaining == null || remaining.isEmpty) return false;
+
+    final vaultSaltB64 = await _storage.read(key: 'vault_salt');
+    if (vaultSaltB64 == null) return false;
+    final vaultSalt = base64Decode(vaultSaltB64);
+
+    final normalized = code.trim().replaceAll('-', '').toUpperCase();
+    final inputHash = sha256.convert(utf8.encode(normalized)).toString();
+
+    final indices = remaining.split(',').map(int.parse).toList();
+
+    for (final i in indices) {
+      final storedHash = await _storage.read(key: 'backup_code_${i}_hash');
+      if (storedHash != inputHash) continue;
+
+      // Hash matched — decrypt the vault password
+      final encB64 = await _storage.read(key: 'backup_code_${i}_enc');
+      if (encB64 == null) return false;
+
+      try {
+        final codeKey = _derivePinKey(normalized, vaultSalt);
+        // _decryptWithKey splits first 12 bytes as IV, rest as ciphertext+tag
+        final passwordBytes = _decryptWithKey(base64Decode(encB64), codeKey);
+        _temporaryPassword = utf8.decode(passwordBytes);
+      } catch (_) {
+        return false;
+      }
+
+      // Mark code as used — delete its data and update remaining list
+      await _storage.delete(key: 'backup_code_${i}_hash');
+      await _storage.delete(key: 'backup_code_${i}_enc');
+      indices.remove(i);
+      await _storage.write(
+        key: 'backup_codes_remaining',
+        value: indices.join(','),
+      );
+
+      return true;
+    }
+
+    return false;
+  }
+
   /// Create a new vault with a strong password (encrypts files on server)
   /// and a 6-digit PIN (protects the password on device).
   Future<void> createVault(String password, String pin) async {

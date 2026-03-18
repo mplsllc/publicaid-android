@@ -57,6 +57,7 @@ class _VaultPinScreenState extends State<VaultPinScreen>
   bool _lockedOut = false;
   Timer? _lockoutTimer;
   bool _biometricAvailable = false;
+  bool _hasBackupCodes = false;
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -87,10 +88,12 @@ class _VaultPinScreenState extends State<VaultPinScreen>
     final hasLocal = await widget.vaultService.hasVault();
     if (hasLocal) {
       final bioEnabled = await widget.vaultService.isBiometricEnabled();
+      final hasCodes = await widget.vaultService.hasBackupCodes();
       if (mounted) {
         setState(() {
           _mode = _VaultMode.pinUnlock;
           _biometricAvailable = bioEnabled;
+          _hasBackupCodes = hasCodes;
           _loading = false;
         });
         if (bioEnabled) _tryBiometric();
@@ -295,6 +298,159 @@ class _VaultPinScreenState extends State<VaultPinScreen>
         _pin = '';
       });
     }
+  }
+
+  Future<void> _showBackupCodeSheet() async {
+    final codeController = TextEditingController();
+    String? sheetError;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.navyBlue,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Enter a backup code',
+                      style: TextStyle(
+                        fontFamily: 'DMSans',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter one of your saved backup codes to reset your PIN.',
+                      style: TextStyle(
+                        fontFamily: 'DMSans',
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: codeController,
+                      autofocus: true,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      textCapitalization: TextCapitalization.characters,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 18,
+                        color: Colors.white,
+                        letterSpacing: 1.5,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'XXXX-XXXX',
+                        hintStyle: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 18,
+                          color: Colors.white.withValues(alpha: 0.3),
+                          letterSpacing: 1.5,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.08),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                              color: Colors.white, width: 1.5),
+                        ),
+                        errorText: sheetError,
+                        errorStyle:
+                            TextStyle(color: Colors.red.shade300, fontSize: 13),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final success = await widget.vaultService
+                              .recoverWithBackupCode(codeController.text);
+                          if (!ctx.mounted) return;
+                          if (success) {
+                            Navigator.pop(ctx); // close sheet
+                            // Transition to PIN setup (re-use recovery mode state)
+                            if (mounted) {
+                              setState(() {
+                                _mode = _VaultMode.recovery;
+                                _passwordStepDone = true;
+                                _pin = '';
+                                _firstPin = '';
+                                _isConfirming = false;
+                                _pinError = null;
+                              });
+                            }
+                          } else {
+                            setSheetState(() =>
+                                sheetError = 'Invalid or already used code');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.navyBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'DMSans',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        child: const Text('Use Code'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    codeController.dispose();
   }
 
   void _navigateToVault() {
@@ -728,6 +884,22 @@ class _VaultPinScreenState extends State<VaultPinScreen>
                               color: Colors.white.withValues(alpha: 0.5),
                             )),
                       ],
+                    ),
+                  ),
+                ],
+
+                // Forgot PIN — backup code recovery (PIN unlock mode only)
+                if (_mode == _VaultMode.pinUnlock && _hasBackupCodes) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _showBackupCodeSheet,
+                    child: Text(
+                      'Forgot PIN? Use a backup code',
+                      style: TextStyle(
+                        fontFamily: 'DMSans',
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                 ],

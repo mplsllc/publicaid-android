@@ -22,6 +22,7 @@ import 'screens/register_screen.dart';
 import 'screens/detail_screen.dart';
 import 'screens/docs_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/vault_setup_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
 
@@ -46,6 +47,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
   final _tabNotifier = ValueNotifier<int>(-1);
   bool _initialized = false;
   bool _hasOnboarded = false;
+  bool _vaultSetupOffered = false;
 
   @override
   void initState() {
@@ -123,6 +125,21 @@ class _PublicaidAppState extends State<PublicaidApp> {
         _initialized = true;
         _hasOnboarded = hasOnboarded;
       });
+
+      // Show vault setup for logged-in users who haven't created a vault yet
+      if (_authService.token != null && !await _vaultService.hasSalt()) {
+        _vaultSetupOffered = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _navigatorKey.currentState?.push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    VaultSetupScreen(vaultService: _vaultService),
+              ),
+            );
+          }
+        });
+      }
     }
   }
 
@@ -132,10 +149,26 @@ class _PublicaidAppState extends State<PublicaidApp> {
     _tabNotifier.value = index;
   }
 
-  void _onAuthChanged() {
+  void _onAuthChanged() async {
     _bookmarkService.onAuthChanged();
     _planService.onAuthChanged();
     _vaultService.setAuthToken(_authService.token);
+
+    if (_authService.token == null) {
+      _vaultSetupOffered = false; // reset so it shows again after re-login
+      return;
+    }
+
+    if (_initialized && !_vaultSetupOffered && !await _vaultService.hasSalt()) {
+      _vaultSetupOffered = true;
+      if (mounted) {
+        _navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (_) => VaultSetupScreen(vaultService: _vaultService),
+          ),
+        );
+      }
+    }
   }
 
   @override
