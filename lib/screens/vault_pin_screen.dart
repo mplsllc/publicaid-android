@@ -98,12 +98,25 @@ class _VaultPinScreenState extends State<VaultPinScreen>
       return;
     }
 
-    final hasRemote = await widget.vaultService.hasRemoteVault();
-    if (mounted) {
-      setState(() {
-        _mode = hasRemote ? _VaultMode.recovery : _VaultMode.setup;
-        _loading = false;
-      });
+    // Only check for a remote vault if the user is authenticated AND has
+    // previously created a vault (vault_salt written by createVault).
+    // Brand-new users have neither, so skip the network call entirely.
+    if (widget.vaultService.isAuthenticated &&
+        await widget.vaultService.hasSalt()) {
+      final hasRemote = await widget.vaultService.hasRemoteVault();
+      if (mounted) {
+        setState(() {
+          _mode = hasRemote ? _VaultMode.recovery : _VaultMode.setup;
+          _loading = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _mode = _VaultMode.setup;
+          _loading = false;
+        });
+      }
     }
   }
 

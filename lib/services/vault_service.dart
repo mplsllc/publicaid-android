@@ -48,6 +48,14 @@ class VaultService {
     _authToken = token;
   }
 
+  /// Whether the user is currently authenticated (token present).
+  bool get isAuthenticated => _authToken != null;
+
+  /// Whether a vault has ever been created on this or another device
+  /// (vault_salt is written by [createVault] and never deleted).
+  Future<bool> hasSalt() async =>
+      (await _storage.read(key: 'vault_salt')) != null;
+
   /// Create a new vault with a strong password (encrypts files on server)
   /// and a 6-digit PIN (protects the password on device).
   Future<void> createVault(String password, String pin) async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/api_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/auth_service.dart';
@@ -20,6 +21,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/detail_screen.dart';
 import 'screens/docs_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
 
@@ -43,6 +45,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
   StreamSubscription<Uri>? _deepLinkSub;
   final _tabNotifier = ValueNotifier<int>(-1);
   bool _initialized = false;
+  bool _hasOnboarded = false;
 
   @override
   void initState() {
@@ -66,7 +69,16 @@ class _PublicaidAppState extends State<PublicaidApp> {
     await _bookmarkService.init();
     await _planService.init();
     _vaultService.setAuthToken(_authService.token);
-    await _notificationService.init();
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
+
+    // Notification permission is deferred to the onboarding completion handler
+    // for new users, so they understand the app before being prompted.
+    if (hasOnboarded) {
+      await _notificationService.init();
+    }
+
     _notificationService.onNotificationTap = (entityId, entityName) {
       _navigatorKey.currentState?.push(
         MaterialPageRoute(
@@ -106,7 +118,12 @@ class _PublicaidAppState extends State<PublicaidApp> {
       _deepLinkService.handleUri(uri);
     });
 
-    if (mounted) setState(() => _initialized = true);
+    if (mounted) {
+      setState(() {
+        _initialized = true;
+        _hasOnboarded = hasOnboarded;
+      });
+    }
   }
 
   void _switchToTab(int index) {
@@ -141,17 +158,36 @@ class _PublicaidAppState extends State<PublicaidApp> {
       theme: buildAppTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: ThemeMode.system,
-      home: _initialized
-          ? _AppShell(
-              apiService: _apiService,
-              authService: _authService,
-              bookmarkService: _bookmarkService,
-              planService: _planService,
-              vaultService: _vaultService,
-              locationService: _locationService,
-              tabNotifier: _tabNotifier,
-            )
-          : const _SplashScreen(),
+      home: !_initialized
+          ? const _SplashScreen()
+          : !_hasOnboarded
+              ? OnboardingScreen(
+                  locationService: _locationService,
+                  authService: _authService,
+                  apiService: _apiService,
+                  onComplete: ({Widget? then}) async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('has_onboarded', true);
+                    await _notificationService.init();
+                    if (mounted) {
+                      setState(() => _hasOnboarded = true);
+                      if (then != null) {
+                        _navigatorKey.currentState?.push(
+                          MaterialPageRoute(builder: (_) => then),
+                        );
+                      }
+                    }
+                  },
+                )
+              : _AppShell(
+                  apiService: _apiService,
+                  authService: _authService,
+                  bookmarkService: _bookmarkService,
+                  planService: _planService,
+                  vaultService: _vaultService,
+                  locationService: _locationService,
+                  tabNotifier: _tabNotifier,
+                ),
     );
   }
 }
