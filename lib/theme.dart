@@ -21,10 +21,10 @@ class AppColors {
   static const darkCard = Color(0xFF1A2F4A);
   static const darkCardBorder = Color(0xFF253D5B);
   static const darkInputBorder = Color(0xFF2A4A6B);
-  static const darkGrayText = Color(0xFF8BA8C8);
+  static const darkGrayText = Color(0xFFB0C8E0);
   static const darkTagBg = Color(0xFF1A3352);
   static const darkGreenBg = Color(0xFF0D2818);
-  static const lightBlue = Color(0xFF5C9CE6);
+  static const lightBlue = Color(0xFF6DB0F0);
   static const lightGreen = Color(0xFF4CAF50);
   static const darkErrorBg = Color(0xFF3B1A1A);
   static const darkErrorBorder = Color(0xFF6B2A2A);
