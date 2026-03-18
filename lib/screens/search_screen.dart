@@ -296,8 +296,8 @@ class _SearchScreenState extends State<SearchScreen> {
                             controller: _searchController,
                             decoration: InputDecoration(
                               hintText: 'e.g. detox, food pantry, shelter...',
-                              prefixIcon: const Icon(Icons.search,
-                                  color: AppColors.mediumGray, size: 20),
+                              prefixIcon: Icon(Icons.search,
+                                  color: AppColors.muted(context), size: 20),
                               filled: true,
                               fillColor: AppColors.surface(context),
                               contentPadding: const EdgeInsets.symmetric(
@@ -314,9 +314,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
                               ),
-                              hintStyle: const TextStyle(
+                              hintStyle: TextStyle(
                                 fontFamily: 'DMSans',
-                                color: AppColors.mediumGray,
+                                color: AppColors.muted(context),
                                 fontSize: 14,
                               ),
                             ),
@@ -428,11 +428,11 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline,
-                size: 48, color: AppColors.mediumGray),
+            Icon(Icons.error_outline,
+                size: 48, color: AppColors.muted(context)),
             const SizedBox(height: 8),
             Text(_error!,
-                style: const TextStyle(color: AppColors.grayText)),
+                style: TextStyle(color: AppColors.muted(context))),
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: _doSearch,
@@ -449,24 +449,24 @@ class _SearchScreenState extends State<SearchScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.search_off,
-                size: 56, color: AppColors.mediumGray.withAlpha(128)),
+                size: 56, color: AppColors.muted(context).withAlpha(128)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'No results found',
               style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Try adjusting your search or filters',
               style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 14,
-                color: AppColors.grayText,
+                color: AppColors.muted(context),
               ),
             ),
           ],
@@ -565,12 +565,12 @@ class _FilterSheetState extends State<_FilterSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Filters',
                 style: TextStyle(
                   fontFamily: 'InstrumentSerif',
                   fontSize: 22,
-                  color: AppColors.navyBlue,
+                  color: AppColors.text(context),
                 ),
               ),
               TextButton(

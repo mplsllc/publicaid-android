@@ -131,21 +131,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Join Publicaid',
                 style: TextStyle(
                   fontFamily: 'InstrumentSerif',
                   fontSize: 28,
-                  color: AppColors.navyBlue,
+                  color: AppColors.text(context),
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Create an account to save services across devices',
                 style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 15,
-                  color: AppColors.grayText,
+                  color: AppColors.muted(context),
                 ),
               ),
               const SizedBox(height: 32),
@@ -292,12 +292,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Already have an account? ',
                     style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 14,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                   GestureDetector(
@@ -312,13 +312,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Sign In',
                       style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.brightBlue,
+                        color: AppColors.accent(context),
                       ),
                     ),
                   ),

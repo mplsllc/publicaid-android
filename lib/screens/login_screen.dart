@@ -149,21 +149,21 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Welcome back',
                 style: TextStyle(
                   fontFamily: 'InstrumentSerif',
                   fontSize: 28,
-                  color: AppColors.navyBlue,
+                  color: AppColors.text(context),
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Sign in to access your saved services',
                 style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 15,
-                  color: AppColors.grayText,
+                  color: AppColors.muted(context),
                 ),
               ),
               const SizedBox(height: 32),
@@ -254,22 +254,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Two-factor authentication',
                         style: TextStyle(
                           fontFamily: 'DMSans',
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.navyBlue,
+                          color: AppColors.text(context),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Enter the 6-digit code from your authenticator app',
                         style: TextStyle(
                           fontFamily: 'DMSans',
                           fontSize: 13,
-                          color: AppColors.grayText,
+                          color: AppColors.muted(context),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -340,12 +340,12 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     "Don't have an account? ",
                     style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 14,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                   GestureDetector(
@@ -360,13 +360,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       );
                     },
-                    child: const Text(
+                    child: Text(
                       'Create Account',
                       style: TextStyle(
                         fontFamily: 'DMSans',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.brightBlue,
+                        color: AppColors.accent(context),
                       ),
                     ),
                   ),

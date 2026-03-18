@@ -126,7 +126,7 @@ class GuideScreen extends StatelessWidget {
                   fontFamily: 'DMSans',
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.grayText,
+                  color: AppColors.muted(context),
                 ),
               ),
             ],
@@ -193,7 +193,7 @@ class GuideScreen extends StatelessWidget {
                   Icon(
                     Icons.description_outlined,
                     size: 14,
-                    color: AppColors.grayText,
+                    color: AppColors.muted(context),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -201,7 +201,7 @@ class GuideScreen extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 13,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   ),
                 ],

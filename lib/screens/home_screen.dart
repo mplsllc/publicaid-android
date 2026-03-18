@@ -193,8 +193,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.mediumGray),
+                      Icon(Icons.error_outline,
+                          size: 48, color: AppColors.muted(context)),
                       const SizedBox(height: 8),
                       Text(_error!,
                           style: TextStyle(color: AppColors.muted(context))),
@@ -380,9 +380,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             horizontal: 14, vertical: 12),
                         filled: true,
                         fillColor: AppColors.bg(context),
-                        hintStyle: const TextStyle(
+                        hintStyle: TextStyle(
                           fontFamily: 'DMSans',
-                          color: AppColors.mediumGray,
+                          color: AppColors.muted(context),
                           fontSize: 15,
                         ),
                       ),
@@ -546,9 +546,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 filled: true,
                 fillColor: AppColors.bg(context),
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontFamily: 'DMSans',
-                  color: AppColors.mediumGray,
+                  color: AppColors.muted(context),
                   fontSize: 13,
                 ),
               ),

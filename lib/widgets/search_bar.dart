@@ -24,14 +24,14 @@ class AppSearchBar extends StatelessWidget {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.card(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(color: AppColors.inputBorderOf(context)),
       ),
       child: Row(
         children: [
           const SizedBox(width: 12),
-          const Icon(Icons.search, color: AppColors.mediumGray, size: 22),
+          Icon(Icons.search, color: AppColors.muted(context), size: 22),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
@@ -45,16 +45,16 @@ class AppSearchBar extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 isDense: true,
                 filled: false,
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontFamily: 'DMSans',
-                  color: AppColors.mediumGray,
+                  color: AppColors.muted(context),
                   fontSize: 15,
                 ),
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 15,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
               ),
               textInputAction: TextInputAction.search,
               onSubmitted: onSubmitted,
@@ -64,11 +64,11 @@ class AppSearchBar extends StatelessWidget {
             Container(
               width: 1,
               height: 24,
-              color: AppColors.inputBorder,
+              color: AppColors.inputBorderOf(context),
             ),
             IconButton(
               onPressed: onFilterTap,
-              icon: const Icon(Icons.tune, color: AppColors.brightBlue, size: 22),
+              icon: Icon(Icons.tune, color: AppColors.accent(context), size: 22),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               constraints: const BoxConstraints(),
             ),
