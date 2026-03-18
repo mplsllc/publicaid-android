@@ -66,42 +66,39 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
+  // Icon mapping matches the server's category icon field values
   IconData _getIcon(String? icon) {
     switch (icon) {
-      case 'food':
-        return Icons.restaurant;
-      case 'housing':
-      case 'shelter':
-        return Icons.home;
-      case 'health':
-      case 'healthcare':
-        return Icons.local_hospital;
-      case 'employment':
-      case 'jobs':
-        return Icons.work;
-      case 'education':
-        return Icons.school;
-      case 'legal':
-        return Icons.gavel;
-      case 'transportation':
-        return Icons.directions_bus;
-      case 'clothing':
-        return Icons.checkroom;
-      case 'mental_health':
+      case 'brain':
         return Icons.psychology;
-      case 'substance_abuse':
+      case 'heart-pulse':
         return Icons.healing;
-      case 'utilities':
+      case 'home':
+        return Icons.home;
+      case 'utensils':
+        return Icons.restaurant;
+      case 'stethoscope':
+        return Icons.local_hospital;
+      case 'scale':
+        return Icons.gavel;
+      case 'briefcase':
+        return Icons.work;
+      case 'book':
+        return Icons.school;
+      case 'zap':
         return Icons.bolt;
-      case 'childcare':
-      case 'youth':
+      case 'shirt':
+        return Icons.checkroom;
+      case 'car':
+        return Icons.directions_bus;
+      case 'baby':
         return Icons.child_care;
-      case 'disability':
-        return Icons.accessible;
-      case 'veterans':
+      case 'shield':
         return Icons.military_tech;
-      case 'financial':
-        return Icons.attach_money;
+      case 'accessibility':
+        return Icons.accessible;
+      case 'heart-handshake':
+        return Icons.elderly;
       default:
         return Icons.category;
     }
@@ -121,11 +118,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.mediumGray),
+                      Icon(Icons.error_outline,
+                          size: 48, color: AppColors.muted(context)),
                       const SizedBox(height: 8),
                       Text(_error!,
-                          style: const TextStyle(color: AppColors.grayText)),
+                          style: TextStyle(color: AppColors.muted(context))),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: _loadCategories,
@@ -135,9 +132,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                 )
               : _categories.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text('No categories available',
-                          style: TextStyle(color: AppColors.grayText)),
+                          style: TextStyle(color: AppColors.muted(context))),
                     )
                   : RefreshIndicator(
                       onRefresh: _loadCategories,
@@ -170,12 +167,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: isChild ? AppColors.tagBg : AppColors.heroBg,
+                color: isChild
+                    ? AppColors.tagBgOf(context)
+                    : AppColors.heroBgOf(context),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 _getIcon(category.icon),
-                color: AppColors.brightBlue,
+                color: AppColors.accent(context),
                 size: 20,
               ),
             ),
@@ -185,7 +184,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 fontFamily: 'DMSans',
                 fontSize: isChild ? 14 : 15,
                 fontWeight: isChild ? FontWeight.w500 : FontWeight.w600,
-                color: AppColors.navyBlue,
+                color: AppColors.text(context),
               ),
             ),
             subtitle: category.description != null && !isChild
@@ -193,16 +192,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     category.description!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'DMSans',
                       fontSize: 12,
-                      color: AppColors.grayText,
+                      color: AppColors.muted(context),
                     ),
                   )
                 : null,
             trailing: category.children.isNotEmpty
-                ? const Icon(Icons.expand_more, color: AppColors.mediumGray)
-                : const Icon(Icons.chevron_right, color: AppColors.mediumGray),
+                ? Icon(Icons.expand_more, color: AppColors.muted(context))
+                : Icon(Icons.chevron_right, color: AppColors.muted(context)),
           ),
         ),
         // Children
