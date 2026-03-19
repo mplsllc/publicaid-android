@@ -240,7 +240,9 @@ class VaultService {
     try {
       final decryptedBytes = _decryptWithKey(base64Decode(encPwdB64), pinKey);
       password = utf8.decode(decryptedBytes);
-    } catch (_) {
+      print('Vault PIN: password decrypted OK, length=${password.length}');
+    } catch (e) {
+      print('Vault PIN: password decrypt failed: $e');
       return false;
     }
 
