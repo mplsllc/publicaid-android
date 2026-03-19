@@ -228,7 +228,10 @@ class VaultService {
 
     final pinSalt = base64Decode(pinSaltB64);
     final pinHash = _hashPin(pin, pinSalt);
-    if (pinHash != storedHash) return false;
+    if (pinHash != storedHash) {
+      print('Vault PIN: hash mismatch');
+      return false;
+    }
 
     // Derive PIN key and decrypt the password
     final pinKey = _derivePinKey(pin, pinSalt);
@@ -247,7 +250,8 @@ class VaultService {
 
     try {
       await _downloadAndDecryptManifest(vaultSaltB64);
-    } catch (_) {
+    } catch (e) {
+      print('Vault PIN unlock: manifest decrypt failed: $e');
       _encryptionKey = null;
       _currentPassword = null;
       return false;
