@@ -245,7 +245,13 @@ class VaultService {
     _encryptionKey = _deriveKey(password, vaultSalt);
     _currentPassword = password;
 
-    await _downloadAndDecryptManifest(vaultSaltB64);
+    try {
+      await _downloadAndDecryptManifest(vaultSaltB64);
+    } catch (_) {
+      _encryptionKey = null;
+      _currentPassword = null;
+      return false;
+    }
     return true;
   }
 

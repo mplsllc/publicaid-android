@@ -355,7 +355,9 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
             icon: s.icon,
             title: s.title,
             trailing: _buildItemCount(
-              widget.vaultService.getDocumentsBySection(s.section).length,
+              widget.vaultService.isUnlocked
+                  ? widget.vaultService.getDocumentsBySection(s.section).length
+                  : 0,
             ),
             onTap: () => _navigateToSection(s.section, s.title),
           ),
@@ -431,7 +433,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildEmergencyDot() {
-    final hasData = widget.vaultService.hasEmergencyData();
+    final hasData = widget.vaultService.isUnlocked && widget.vaultService.hasEmergencyData();
     return Text(
       hasData ? '\u25CF' : '\u25CB',
       style: TextStyle(

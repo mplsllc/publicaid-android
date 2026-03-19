@@ -82,6 +82,7 @@ class _BlogScreenState extends State<BlogScreen> {
   }
 
   Future<void> _loadArticles({String? topic, int page = 1}) async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -105,13 +106,11 @@ class _BlogScreenState extends State<BlogScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        // Auto-retry after a delay
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted && _articles.isEmpty) {
-          _loadArticles(topic: topic, page: page);
-        }
-      }
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Could not load articles';
+      });
     }
   }
 
