@@ -59,17 +59,10 @@ class VaultService {
   /// Clear all local vault data from secure storage.
   /// Called on logout so a different user doesn't inherit stale vault keys.
   Future<void> clearLocal() async {
-    for (final key in [
-      'vault_pin_hash',
-      'vault_pin_salt',
-      'vault_salt',
-      'vault_encrypted_password',
-      'vault_manifest_v2',
-      'vault_bio_password',
-      'vault_biometric_enabled',
-    ]) {
-      await _storage.delete(key: key);
-    }
+    // deleteAll clears the entire Android Keystore for this app,
+    // which is necessary because individual key deletes don't always
+    // work and Keystore entries can survive app uninstalls.
+    await _storage.deleteAll();
     _encryptionKey = null;
     _currentPassword = null;
     _temporaryPassword = null;

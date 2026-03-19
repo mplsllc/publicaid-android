@@ -72,6 +72,14 @@ class _PublicaidAppState extends State<PublicaidApp> {
     await _planService.init();
     _vaultService.setAuthToken(_authService.token);
 
+    // Clear stale vault keys if the user is not logged in.
+    // Android Keystore entries can persist across uninstalls,
+    // leaving orphaned vault data that causes PIN unlock failures.
+    if (_authService.token == null && await _vaultService.hasVault()) {
+      print('Clearing stale vault keys (no auth token but vault keys exist)');
+      await _vaultService.clearLocal();
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
 
