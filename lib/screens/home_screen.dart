@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/app_menu.dart';
 import '../models/category.dart' as models;
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -153,8 +152,9 @@ class _HomeScreenState extends State<HomeScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => _showMobileMenu(context),
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'My Page',
+            onPressed: () => widget.onOpenAccount?.call(),
           ),
         ],
       ),
@@ -317,24 +317,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showMobileMenu(BuildContext context) {
-    showAppMenu(
-      context,
-      onNavigate: (route) {
-        switch (route) {
-          case 'home':
-            widget.onSwitchTab?.call(0);
-            break;
-          case 'login':
-          case 'register':
-          case 'account':
-            widget.onOpenAccount?.call();
-            break;
-        }
-      },
-      authService: widget.authService,
-    );
-  }
 
   Widget _buildSearchCard() {
     return Container(

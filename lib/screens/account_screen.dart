@@ -18,6 +18,8 @@ class AccountScreen extends StatefulWidget {
   final PlanService? planService;
   final VaultService? vaultService;
   final void Function(String)? onNavigate;
+  final ThemeMode? themeMode;
+  final void Function(ThemeMode)? onThemeModeChanged;
 
   const AccountScreen({
     super.key,
@@ -26,6 +28,8 @@ class AccountScreen extends StatefulWidget {
     this.planService,
     this.vaultService,
     this.onNavigate,
+    this.themeMode,
+    this.onThemeModeChanged,
   });
 
   @override
@@ -459,6 +463,10 @@ class _AccountScreenState extends State<AccountScreen> {
               }
             },
           ),
+          if (widget.onThemeModeChanged != null) ...[
+            const Divider(height: 1),
+            _buildThemeToggle(),
+          ],
           const Divider(height: 1),
           _linkTile(
             Icons.info_outline,
@@ -476,6 +484,44 @@ class _AccountScreenState extends State<AccountScreen> {
             Icons.description_outlined,
             'Terms of Service',
             () => _openUrl('https://publicaid.org/terms'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeToggle() {
+    final mode = widget.themeMode ?? ThemeMode.system;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Icon(Icons.palette_outlined, color: AppColors.accent(context), size: 22),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'Appearance',
+              style: TextStyle(
+                fontFamily: 'DMSans',
+                fontSize: 15,
+                color: AppColors.text(context),
+              ),
+            ),
+          ),
+          SegmentedButton<ThemeMode>(
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            segments: const [
+              ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode, size: 16)),
+              ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.phone_android, size: 16)),
+              ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode, size: 16)),
+            ],
+            selected: {mode},
+            onSelectionChanged: (selected) {
+              widget.onThemeModeChanged?.call(selected.first);
+            },
           ),
         ],
       ),

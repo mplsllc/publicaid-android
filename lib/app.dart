@@ -49,6 +49,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
   bool _initialized = false;
   bool _hasOnboarded = false;
   bool _vaultSetupOffered = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
   @override
   void initState() {
@@ -75,6 +76,16 @@ class _PublicaidAppState extends State<PublicaidApp> {
 
     final prefs = await SharedPreferences.getInstance();
     final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
+
+    // Load theme preference
+    final themePref = prefs.getString('theme_mode') ?? 'system';
+    setState(() {
+      _themeMode = themePref == 'light'
+          ? ThemeMode.light
+          : themePref == 'dark'
+              ? ThemeMode.dark
+              : ThemeMode.system;
+    });
 
     // Notification permission is deferred to the onboarding completion handler
     // for new users, so they understand the app before being prompted.
@@ -146,6 +157,13 @@ class _PublicaidAppState extends State<PublicaidApp> {
     }
   }
 
+  void _setThemeMode(ThemeMode mode) async {
+    setState(() => _themeMode = mode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme_mode',
+        mode == ThemeMode.light ? 'light' : mode == ThemeMode.dark ? 'dark' : 'system');
+  }
+
   void _switchToTab(int index) {
     // Pop back to root if needed, then switch tab via notifier
     _navigatorKey.currentState?.popUntil((route) => route.isFirst);
@@ -198,7 +216,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       darkTheme: buildDarkTheme(),
-      themeMode: ThemeMode.system,
+      themeMode: _themeMode,
       home: !_initialized
           ? const _SplashScreen()
           : !_hasOnboarded
@@ -228,6 +246,8 @@ class _PublicaidAppState extends State<PublicaidApp> {
                   vaultService: _vaultService,
                   locationService: _locationService,
                   tabNotifier: _tabNotifier,
+                  themeMode: _themeMode,
+                  onThemeModeChanged: _setThemeMode,
                 ),
     );
   }
@@ -272,6 +292,8 @@ class _AppShell extends StatefulWidget {
   final VaultService vaultService;
   final LocationService locationService;
   final ValueNotifier<int> tabNotifier;
+  final ThemeMode themeMode;
+  final void Function(ThemeMode) onThemeModeChanged;
 
   const _AppShell({
     required this.apiService,
@@ -281,6 +303,8 @@ class _AppShell extends StatefulWidget {
     required this.vaultService,
     required this.locationService,
     required this.tabNotifier,
+    required this.themeMode,
+    required this.onThemeModeChanged,
   });
 
   @override
@@ -369,6 +393,8 @@ class _AppShellState extends State<_AppShell> {
               planService: widget.planService,
               vaultService: widget.vaultService,
               onNavigate: _handleMenuNav,
+              themeMode: widget.themeMode,
+              onThemeModeChanged: widget.onThemeModeChanged,
             ),
           ),
         );

@@ -182,11 +182,11 @@ class _PlanScreenState extends State<PlanScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.checklist,
+          Icon(Icons.map_outlined,
               size: 64, color: AppColors.muted(context).withAlpha(128)),
           const SizedBox(height: 16),
           Text(
-            'No steps yet',
+            'Your plan is empty',
             style: TextStyle(
               fontFamily: 'DMSans',
               fontSize: 18,
@@ -194,16 +194,34 @@ class _PlanScreenState extends State<PlanScreen> {
               color: AppColors.text(context),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 36),
             child: Text(
-              'Add services from search results or service details',
+              'My Plan helps you organize the services you need. '
+              'Search for services, then tap "Add to Plan" on any '
+              'listing to create your personalized action list.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 14,
+                height: 1.5,
                 color: AppColors.muted(context),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 36),
+            child: Text(
+              'You can add notes, track progress, and keep '
+              'everything in one place.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'DMSans',
+                fontSize: 13,
+                height: 1.4,
+                color: AppColors.muted(context).withAlpha(180),
               ),
             ),
           ),
