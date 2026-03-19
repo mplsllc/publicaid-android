@@ -449,7 +449,7 @@ class _AccountScreenState extends State<AccountScreen> {
             const Divider(height: 1),
           _linkTile(
             Icons.folder_outlined,
-            'Documents',
+            'Vault',
             () {
               if (widget.vaultService != null) {
                 Navigator.push(
