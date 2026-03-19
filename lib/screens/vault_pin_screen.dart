@@ -101,11 +101,10 @@ class _VaultPinScreenState extends State<VaultPinScreen>
       return;
     }
 
-    // Only check for a remote vault if the user is authenticated AND has
-    // previously created a vault (vault_salt written by createVault).
-    // Brand-new users have neither, so skip the network call entirely.
-    if (widget.vaultService.isAuthenticated &&
-        await widget.vaultService.hasSalt()) {
+    // Check for a remote vault (server-side manifest) if authenticated.
+    // After reinstall, local keys are gone but the manifest persists on the
+    // server. The user can recover with their vault password.
+    if (widget.vaultService.isAuthenticated) {
       final hasRemote = await widget.vaultService.hasRemoteVault();
       if (mounted) {
         setState(() {
