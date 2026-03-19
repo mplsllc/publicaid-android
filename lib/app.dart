@@ -22,6 +22,7 @@ import 'screens/register_screen.dart';
 import 'screens/detail_screen.dart';
 import 'screens/docs_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/vault_pin_screen.dart';
 import 'screens/vault_setup_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'theme.dart';
@@ -126,15 +127,17 @@ class _PublicaidAppState extends State<PublicaidApp> {
         _hasOnboarded = hasOnboarded;
       });
 
-      // Show vault setup for logged-in users who haven't created a vault yet
+      // Show vault setup or recovery for logged-in users without local vault
       if (_authService.token != null && !await _vaultService.hasSalt()) {
         _vaultSetupOffered = true;
+        final hasRemote = await _vaultService.hasRemoteVault();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             _navigatorKey.currentState?.push(
               MaterialPageRoute(
-                builder: (_) =>
-                    VaultSetupScreen(vaultService: _vaultService),
+                builder: (_) => hasRemote
+                    ? VaultPinScreen(vaultService: _vaultService)
+                    : VaultSetupScreen(vaultService: _vaultService),
               ),
             );
           }
@@ -161,10 +164,15 @@ class _PublicaidAppState extends State<PublicaidApp> {
 
     if (_initialized && !_vaultSetupOffered && !await _vaultService.hasSalt()) {
       _vaultSetupOffered = true;
+      // Check if user has an existing vault on the server (reinstall scenario).
+      // If so, push VaultPinScreen in recovery mode instead of setup.
+      final hasRemote = await _vaultService.hasRemoteVault();
       if (mounted) {
         _navigatorKey.currentState?.push(
           MaterialPageRoute(
-            builder: (_) => VaultSetupScreen(vaultService: _vaultService),
+            builder: (_) => hasRemote
+                ? VaultPinScreen(vaultService: _vaultService)
+                : VaultSetupScreen(vaultService: _vaultService),
           ),
         );
       }
