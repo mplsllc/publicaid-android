@@ -185,6 +185,7 @@ class VaultService {
   /// Create a new vault with a strong password (encrypts files on server)
   /// and a 6-digit PIN (protects the password on device).
   Future<void> createVault(String password, String pin) async {
+    print('Vault createVault called, password length=${password.length}, pin length=${pin.length}');
     // Salt for password → AES key derivation
     final vaultSalt = _randomBytes(_saltLength);
     await _storage.write(key: 'vault_salt', value: base64Encode(vaultSalt));
@@ -214,6 +215,18 @@ class VaultService {
     _encryptionKey = _deriveKey(password, vaultSalt);
     _documents = [];
     await _uploadManifest();
+
+    // Verify the PIN can immediately decrypt the password
+    final verifyPinSalt = base64Decode((await _storage.read(key: 'vault_pin_salt'))!);
+    final verifyPinKey = _derivePinKey(pin, verifyPinSalt);
+    final verifyEncPwd = base64Decode((await _storage.read(key: 'vault_encrypted_password'))!);
+    try {
+      final verifyBytes = _decryptWithKey(verifyEncPwd, verifyPinKey);
+      final verifyPwd = utf8.decode(verifyBytes);
+      print('Vault createVault: verify OK, decrypted password matches=${verifyPwd == password}');
+    } catch (e) {
+      print('Vault createVault: VERIFY FAILED — $e');
+    }
   }
 
   /// Unlock the vault with a 6-digit PIN (daily use).
