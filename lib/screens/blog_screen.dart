@@ -66,15 +66,22 @@ class _BlogScreenState extends State<BlogScreen> {
   Future<void> _detectStateAndLoad() async {
     // Try to detect user's state from location
     final loc = widget.locationService;
-    if (loc != null && loc.permissionGranted && loc.currentLocation != null) {
+    if (loc != null) {
       try {
-        final pos = loc.currentLocation!;
-        final uri = Uri.parse(
-            'https://publicaid.org/api/state-from-coords?lat=${pos.latitude}&lon=${pos.longitude}');
-        final resp = await http.get(uri);
-        if (resp.statusCode == 200) {
-          final data = json.decode(resp.body) as Map<String, dynamic>;
-          _userState = data['state'] as String?;
+        // If location not yet fetched, try to get it
+        var pos = loc.currentLocation;
+        if (pos == null && loc.permissionGranted) {
+          await loc.getCurrentPosition();
+          pos = loc.currentLocation;
+        }
+        if (pos != null) {
+          final uri = Uri.parse(
+              'https://publicaid.org/api/state-from-coords?lat=${pos.latitude}&lon=${pos.longitude}');
+          final resp = await http.get(uri);
+          if (resp.statusCode == 200) {
+            final data = json.decode(resp.body) as Map<String, dynamic>;
+            _userState = data['state'] as String?;
+          }
         }
       } catch (_) {}
     }
