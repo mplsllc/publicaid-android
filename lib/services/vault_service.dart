@@ -95,24 +95,12 @@ class VaultService {
   /// Persist backup codes encrypted under the vault password.
   /// Must be called after [createVault] (requires vault_salt in secure storage).
   Future<void> saveBackupCodes(List<String> codes, String vaultPassword) async {
-    final vaultSaltB64 = await _storage.read(key: 'vault_salt');
-    if (vaultSaltB64 == null) {
-      throw VaultException(0, 'No vault salt — call createVault first');
-    }
-    final vaultSalt = base64Decode(vaultSaltB64);
-
     for (var i = 0; i < codes.length; i++) {
       final normalized = codes[i].replaceAll('-', '').toUpperCase();
-
-      // Store hash for verification
+      // Store hash for verification — backup codes just prove identity,
+      // the password is read from secure storage after verification.
       final hash = sha256.convert(utf8.encode(normalized)).toString();
       await _storage.write(key: 'backup_code_${i}_hash', value: hash);
-
-      // Derive key from code + vault salt, encrypt vault password
-      // _encryptWithKey prepends a random 12-byte IV — format: IV(12) + ciphertext + tag(16)
-      final codeKey = _derivePinKey(normalized, vaultSalt);
-      final encBlob = _encryptWithKey(Uint8List.fromList(utf8.encode(vaultPassword)), codeKey);
-      await _storage.write(key: 'backup_code_${i}_enc', value: base64Encode(encBlob));
     }
 
     await _storage.write(
@@ -135,10 +123,6 @@ class VaultService {
     final remaining = await _storage.read(key: 'backup_codes_remaining');
     if (remaining == null || remaining.isEmpty) return false;
 
-    final vaultSaltB64 = await _storage.read(key: 'vault_salt');
-    if (vaultSaltB64 == null) return false;
-    final vaultSalt = base64Decode(vaultSaltB64);
-
     final normalized = code.trim().replaceAll('-', '').toUpperCase();
     final inputHash = sha256.convert(utf8.encode(normalized)).toString();
 
@@ -148,22 +132,13 @@ class VaultService {
       final storedHash = await _storage.read(key: 'backup_code_${i}_hash');
       if (storedHash != inputHash) continue;
 
-      // Hash matched — decrypt the vault password
-      final encB64 = await _storage.read(key: 'backup_code_${i}_enc');
-      if (encB64 == null) return false;
+      // Code verified — read password from secure storage
+      final password = await _storage.read(key: 'vault_password');
+      if (password == null) return false;
+      _temporaryPassword = password;
 
-      try {
-        final codeKey = _derivePinKey(normalized, vaultSalt);
-        // _decryptWithKey splits first 12 bytes as IV, rest as ciphertext+tag
-        final passwordBytes = _decryptWithKey(base64Decode(encB64), codeKey);
-        _temporaryPassword = utf8.decode(passwordBytes);
-      } catch (_) {
-        return false;
-      }
-
-      // Mark code as used — delete its data and update remaining list
+      // Mark code as used
       await _storage.delete(key: 'backup_code_${i}_hash');
-      await _storage.delete(key: 'backup_code_${i}_enc');
       indices.remove(i);
       await _storage.write(
         key: 'backup_codes_remaining',
@@ -183,24 +158,18 @@ class VaultService {
     final vaultSalt = _randomBytes(_saltLength);
     await _storage.write(key: 'vault_salt', value: base64Encode(vaultSalt));
 
-    // Salt for PIN hashing & PIN key derivation
+    // Salt for PIN hashing
     final pinSalt = _randomBytes(_saltLength);
     await _storage.write(key: 'vault_pin_salt', value: base64Encode(pinSalt));
 
-    // Hash PIN for quick verification
+    // Hash PIN for verification
     final pinHash = _hashPin(pin, pinSalt);
     await _storage.write(key: 'vault_pin_hash', value: pinHash);
 
-    // Derive PIN key and encrypt the password
-    final pinKey = _derivePinKey(pin, pinSalt);
-    final encryptedPassword = _encryptWithKey(
-      Uint8List.fromList(utf8.encode(password)),
-      pinKey,
-    );
-    await _storage.write(
-      key: 'vault_encrypted_password',
-      value: base64Encode(encryptedPassword),
-    );
+    // Store password directly in secure storage (Android Keystore encrypts
+    // at rest). PIN hash verification gates access — no need for additional
+    // app-level encryption of the password.
+    await _storage.write(key: 'vault_password', value: password);
 
     await _storage.write(key: 'vault_manifest_v2', value: 'true');
 
@@ -211,16 +180,16 @@ class VaultService {
   }
 
   /// Unlock the vault with a 6-digit PIN (daily use).
-  /// PIN → verify → decrypt password → derive AES key → download manifest.
+  /// PIN → verify hash → read password → derive AES key → download manifest.
   Future<bool> unlockWithPin(String pin) async {
     final storedHash = await _storage.read(key: 'vault_pin_hash');
     final pinSaltB64 = await _storage.read(key: 'vault_pin_salt');
-    final encPwdB64 = await _storage.read(key: 'vault_encrypted_password');
+    final password = await _storage.read(key: 'vault_password');
     final vaultSaltB64 = await _storage.read(key: 'vault_salt');
 
     if (storedHash == null ||
         pinSaltB64 == null ||
-        encPwdB64 == null ||
+        password == null ||
         vaultSaltB64 == null) {
       return false;
     }
@@ -229,17 +198,7 @@ class VaultService {
     final pinHash = _hashPin(pin, pinSalt);
     if (pinHash != storedHash) return false;
 
-    // Derive PIN key and decrypt the password
-    final pinKey = _derivePinKey(pin, pinSalt);
-    final String password;
-    try {
-      final decryptedBytes = _decryptWithKey(base64Decode(encPwdB64), pinKey);
-      password = utf8.decode(decryptedBytes);
-    } catch (_) {
-      return false;
-    }
-
-    // Derive the real AES encryption key from the password
+    // PIN verified — derive the real AES encryption key from the password
     final vaultSalt = base64Decode(vaultSaltB64);
     _encryptionKey = _deriveKey(password, vaultSalt);
     _currentPassword = password;
@@ -247,7 +206,6 @@ class VaultService {
     try {
       await _downloadAndDecryptManifest(vaultSaltB64);
     } catch (e) {
-      // Manifest decrypt failed — treat as wrong credentials
       _encryptionKey = null;
       _currentPassword = null;
       return false;
@@ -292,14 +250,11 @@ class VaultService {
   }
 
   /// Set or change the 6-digit PIN after a password-based unlock.
-  /// Encrypts the password with the new PIN key and stores it locally.
   Future<void> setPin(String pin) async {
     if (_temporaryPassword == null && !isUnlocked) {
       throw VaultException(0, 'No password available — unlock first');
     }
 
-    // If called right after unlockWithPassword, use _temporaryPassword.
-    // Otherwise this is a PIN change; caller must supply password separately.
     final password = _temporaryPassword!;
 
     final pinSalt = _randomBytes(_saltLength);
@@ -308,15 +263,8 @@ class VaultService {
     final pinHash = _hashPin(pin, pinSalt);
     await _storage.write(key: 'vault_pin_hash', value: pinHash);
 
-    final pinKey = _derivePinKey(pin, pinSalt);
-    final encryptedPassword = _encryptWithKey(
-      Uint8List.fromList(utf8.encode(password)),
-      pinKey,
-    );
-    await _storage.write(
-      key: 'vault_encrypted_password',
-      value: base64Encode(encryptedPassword),
-    );
+    // Store password directly — Android Keystore handles at-rest encryption.
+    await _storage.write(key: 'vault_password', value: password);
 
     _temporaryPassword = null;
   }
