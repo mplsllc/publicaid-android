@@ -48,6 +48,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
   bool _initialized = false;
   bool _hasOnboarded = false;
   bool _vaultSetupOffered = false;
+  bool _wasLoggedIn = false;
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
     await _bookmarkService.init();
     await _planService.init();
     _vaultService.setAuthToken(_authService.token);
+    _wasLoggedIn = _authService.token != null;
 
     final prefs = await SharedPreferences.getInstance();
     final hasOnboarded = prefs.getBool('has_onboarded') ?? false;
@@ -155,10 +157,17 @@ class _PublicaidAppState extends State<PublicaidApp> {
     _vaultService.setAuthToken(_authService.token);
 
     if (_authService.token == null) {
-      _vaultSetupOffered = false; // reset so it shows again after re-login
-      await _vaultService.clearLocal(); // wipe stale vault keys for next user
+      // Only clear vault keys on explicit logout (was logged in, now isn't).
+      // Don't clear on app start when token is null — that would destroy
+      // vault keys needed for recovery on reinstall.
+      if (_wasLoggedIn) {
+        await _vaultService.clearLocal();
+      }
+      _wasLoggedIn = false;
+      _vaultSetupOffered = false;
       return;
     }
+    _wasLoggedIn = true;
 
     if (_initialized && !_vaultSetupOffered && !await _vaultService.hasSalt()) {
       _vaultSetupOffered = true;

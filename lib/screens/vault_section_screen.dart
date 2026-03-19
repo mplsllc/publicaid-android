@@ -278,33 +278,38 @@ class _VaultSectionScreenState extends State<VaultSectionScreen> {
   }
 
   Future<String?> _showDescriptionDialog() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
+    String? result;
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Description'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'e.g. Driver\'s license, front side',
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Add Description'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'e.g. Driver\'s license, front side',
+            ),
+            textCapitalization: TextCapitalization.sentences,
+            maxLines: 2,
           ),
-          textCapitalization: TextCapitalization.sentences,
-          maxLines: 2,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                result = controller.text.trim();
+                Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
-    controller.dispose();
     return result;
   }
 
