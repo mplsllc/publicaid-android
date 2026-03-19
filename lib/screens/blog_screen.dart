@@ -60,7 +60,7 @@ class _BlogScreenState extends State<BlogScreen> {
   @override
   void initState() {
     super.initState();
-    _detectStateAndLoad();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _detectStateAndLoad());
   }
 
   Future<void> _detectStateAndLoad() async {
