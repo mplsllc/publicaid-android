@@ -161,7 +161,8 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
                           ? (value) async {
                               try {
                                 if (value) {
-                                  await widget.vaultService.enableBiometric();
+                                  final ok = await widget.vaultService.enableBiometric();
+                                  if (!ok) return; // auth failed or cancelled
                                 } else {
                                   await widget.vaultService.disableBiometric();
                                 }

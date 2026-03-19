@@ -688,17 +688,25 @@ class VaultService {
   /// biometric to confirm, stores password in secure storage on success.
   /// Returns true on success, false if biometric prompt failed/cancelled.
   Future<bool> enableBiometric() async {
-    if (_currentPassword == null) return false;
+    if (_currentPassword == null) {
+      print('enableBiometric: _currentPassword is null');
+      return false;
+    }
     try {
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Confirm your identity to enable fingerprint unlock',
         options: const AuthenticationOptions(stickyAuth: true, biometricOnly: false),
       );
-      if (!authenticated) return false;
+      if (!authenticated) {
+        print('enableBiometric: user cancelled or auth failed');
+        return false;
+      }
       await _storage.write(key: 'vault_bio_password', value: _currentPassword!);
       await _storage.write(key: 'vault_biometric_enabled', value: 'true');
+      print('enableBiometric: SUCCESS');
       return true;
-    } catch (_) {
+    } catch (e) {
+      print('enableBiometric: ERROR $e');
       return false;
     }
   }
