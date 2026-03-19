@@ -285,27 +285,96 @@ class _DetailScreenState extends State<DetailScreen> {
     final isBookmarked = widget.bookmarkService?.isBookmarked(widget.entityId) ?? false;
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Action buttons
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (e.lat != null && e.lng != null)
-                ElevatedButton.icon(
-                  onPressed: _openDirections,
-                  icon: const Icon(Icons.directions, size: 18),
-                  label: const Text('Directions'),
+          // --- Entity name + category tags ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  e.name,
+                  style: TextStyle(
+                    fontFamily: 'InstrumentSerif',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.text(context),
+                  ),
                 ),
-              OutlinedButton.icon(
-                onPressed: _shareEntity,
-                icon: const Icon(Icons.share, size: 18),
-                label: const Text('Share'),
-              ),
-              if (widget.authService?.isLoggedIn == true) ...[
+                if (e.categories.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: e.categories
+                        .map((c) => GestureDetector(
+                              onTap: () {
+                                if (widget.locationService != null) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SearchScreen(
+                                        apiService: widget.apiService,
+                                        locationService: widget.locationService!,
+                                        authService: widget.authService,
+                                        bookmarkService: widget.bookmarkService,
+                                        planService: widget.planService,
+                                        initialCategory: c.slug,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.tagBgOf(context),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  c.name,
+                                  style: TextStyle(
+                                    fontFamily: 'DMSans',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.accent(context),
+                                  ),
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // --- Contact info card (phone, intake, address, website) ---
+          _buildContactInfoCard(e),
+
+          // --- Action buttons ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (e.lat != null && e.lng != null)
+                  ElevatedButton.icon(
+                    onPressed: _openDirections,
+                    icon: const Icon(Icons.directions, size: 18),
+                    label: const Text('Get Directions'),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: _shareEntity,
+                  icon: const Icon(Icons.share, size: 18),
+                  label: const Text('Share'),
+                ),
                 OutlinedButton.icon(
                   onPressed: _toggleBookmark,
                   icon: Icon(
@@ -321,235 +390,194 @@ class _DetailScreenState extends State<DetailScreen> {
                         )
                       : null,
                 ),
-                OutlinedButton.icon(
-                  onPressed: _savingSupport ? null : _toggleSupport,
-                  icon: Icon(
-                    _isSupporting ? Icons.favorite : Icons.favorite_border,
-                    size: 18,
-                    color: _isSupporting ? Colors.red : null,
+                if (widget.authService?.isLoggedIn == true) ...[
+                  OutlinedButton.icon(
+                    onPressed: _savingSupport ? null : _toggleSupport,
+                    icon: Icon(
+                      _isSupporting ? Icons.favorite : Icons.favorite_border,
+                      size: 18,
+                      color: _isSupporting ? Colors.red : null,
+                    ),
+                    label: Text(_isSupporting ? 'Supporting' : 'I Support'),
+                    style: _isSupporting
+                        ? OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Colors.red,
+                          )
+                        : null,
                   ),
-                  label: Text(_isSupporting ? 'Supporting' : 'I Support'),
-                  style: _isSupporting
-                      ? OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red),
-                          foregroundColor: Colors.red,
-                        )
-                      : null,
-                ),
-                OutlinedButton.icon(
-                  onPressed: _checkingIn ? null : _addCheckin,
-                  icon: Icon(
-                    Icons.check_circle_outline,
-                    size: 18,
-                    color: AppColors.greenTextOf(context),
-                  ),
-                  label: Text(_checkingIn ? 'Logging...' : 'I Visited'),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.greenTextOf(context)),
-                    foregroundColor: AppColors.greenTextOf(context),
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    if (widget.planService == null) return;
-                    final e = _entity!;
-                    if (widget.planService!.isInPlan(e.id)) return;
-                    widget.planService!.addToPlan(e.id, entityName: e.name, city: e.city, state: e.state, phone: e.phone, addressLine1: e.addressLine1);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to your plan!')));
-                  },
-                  icon: Icon(widget.planService?.isInPlan(widget.entityId) == true ? Icons.check : Icons.add_task, size: 18),
-                  label: Text(widget.planService?.isInPlan(widget.entityId) == true ? 'In Plan' : 'Add to Plan'),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
 
-          // Description
+          // --- About ---
           if (e.description != null && e.description!.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text('About',
+            _sectionHeader('ABOUT'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                e.description!,
                 style: TextStyle(
-                    fontFamily: 'InstrumentSerif',
-                    fontSize: 20,
-                    color: AppColors.text(context))),
-            const SizedBox(height: 8),
-            Text(
-              e.description!,
-              style: TextStyle(
-                fontFamily: 'DMSans',
-                fontSize: 14,
-                color: AppColors.text(context),
-                height: 1.5,
+                  fontFamily: 'DMSans',
+                  fontSize: 14,
+                  color: AppColors.text(context),
+                  height: 1.6,
+                ),
               ),
             ),
           ],
 
-          // Contact card
-          const SizedBox(height: 20),
-          _buildContactCard(e),
-
-          // Address
-          if (e.fullAddress.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _buildSection('Address', [
-              GestureDetector(
-                onTap: (e.lat != null && e.lng != null) ? _openDirections : null,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.location_on_outlined,
-                        size: 18,
-                        color: (e.lat != null && e.lng != null)
-                            ? AppColors.accent(context)
-                            : AppColors.muted(context)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        e.fullAddress,
-                        style: TextStyle(
-                          fontFamily: 'DMSans',
-                          fontSize: 14,
-                          color: (e.lat != null && e.lng != null)
-                              ? AppColors.accent(context)
-                              : AppColors.text(context),
-                        ),
-                      ),
-                    ),
-                    if (e.lat != null && e.lng != null)
-                      Icon(Icons.directions_outlined,
-                          size: 18, color: AppColors.accent(context)),
-                  ],
-                ),
+          // --- Eligibility (populations, age groups) ---
+          if (e.populationsServed.isNotEmpty || e.ageGroups.isNotEmpty) ...[
+            _sectionHeader('ELIGIBILITY'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                children: [
+                  ...e.ageGroups.map((a) => _infoChip(a)),
+                  ...e.populationsServed.map((p) => _infoChip(p)),
+                  ...e.paymentTypes.map((p) => _infoChip(p)),
+                ],
               ),
-            ]),
+            ),
           ],
 
-          // Hours
-          if (_hours.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _buildSection('Hours', [
-              ..._hours.map((h) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          h.dayName,
-                          style: TextStyle(
-                            fontFamily: 'DMSans',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.text(context),
-                          ),
-                        ),
-                        Text(
-                          h.hoursText,
-                          style: TextStyle(
-                            fontFamily: 'DMSans',
-                            fontSize: 14,
-                            color: h.closed ? Colors.red : AppColors.muted(context),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-            ]),
+          // --- Languages ---
+          if (e.languages.isNotEmpty) ...[
+            _sectionHeader('LANGUAGES'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                children: e.languages.map((l) => _infoChip(l)).toList(),
+              ),
+            ),
           ],
 
-          // Services
+          // --- Service Settings ---
           if (_services.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _buildSection('Services', [
-              ..._services.map((s) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.check_circle_outline,
-                            size: 18, color: AppColors.greenTextOf(context)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+            _sectionHeader('SERVICE SETTINGS'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                children: _services.map((s) => _infoChip(s.name)).toList(),
+              ),
+            ),
+          ],
+
+          // --- Hours ---
+          if (_hours.isNotEmpty) ...[
+            _sectionHeader('HOURS'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: _hours
+                    .map((h) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                s.name,
-                                style: TextStyle(
-                                  fontFamily: 'DMSans',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.text(context),
-                                ),
-                              ),
-                              if (s.description != null &&
-                                  s.description!.isNotEmpty)
-                                Text(
-                                  s.description!,
+                              Text(h.dayName,
                                   style: TextStyle(
                                     fontFamily: 'DMSans',
-                                    fontSize: 13,
-                                    color: AppColors.muted(context),
-                                  ),
-                                ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.text(context),
+                                  )),
+                              Text(h.hoursText,
+                                  style: TextStyle(
+                                    fontFamily: 'DMSans',
+                                    fontSize: 14,
+                                    color: h.closed
+                                        ? Colors.red
+                                        : AppColors.muted(context),
+                                  )),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  )),
-            ]),
-          ],
-
-          // Category tags
-          if (e.categories.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _buildSection('Categories', [
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: e.categories
-                    .map((c) => ActionChip(
-                          label: Text(c.name),
-                          avatar: Icon(Icons.search, size: 16,
-                              color: AppColors.accent(context)),
-                          onPressed: () {
-                            if (widget.locationService != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => SearchScreen(
-                                    apiService: widget.apiService,
-                                    locationService: widget.locationService!,
-                                    authService: widget.authService,
-                                    bookmarkService: widget.bookmarkService,
-                                    planService: widget.planService,
-                                    initialCategory: c.slug,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              launchUrl(
-                                Uri.parse('https://publicaid.org/search?category=${c.slug}'),
-                                mode: LaunchMode.inAppBrowserView,
-                              );
-                            }
-                          },
                         ))
                     .toList(),
               ),
-            ]),
+            ),
           ],
 
-          // Details section (languages, payment, populations, accessibility)
-          if (_hasDetailInfo(e)) ...[
-            const SizedBox(height: 20),
-            _buildDetailsSection(e),
+          // --- Accessibility ---
+          if (e.accessibility.isNotEmpty) ...[
+            _sectionHeader('ACCESSIBILITY'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                children: e.accessibility.map((a) => _infoChip(a)).toList(),
+              ),
+            ),
           ],
 
-          // Data quality footer
+          // --- Data quality footer ---
           if (e.dataQuality != null) ...[
-            const SizedBox(height: 20),
-            _buildDataQualityFooter(e.dataQuality!),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildDataQualityFooter(e.dataQuality!),
+            ),
+          ],
+
+          // --- Logged-in actions (visit, plan) ---
+          if (widget.authService?.isLoggedIn == true) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _checkingIn ? null : _addCheckin,
+                      icon: Icon(Icons.check_circle_outline,
+                          size: 18, color: AppColors.greenTextOf(context)),
+                      label: Text(_checkingIn ? 'Logging...' : 'Log a Visit'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.greenTextOf(context)),
+                        foregroundColor: AppColors.greenTextOf(context),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        if (widget.planService == null) return;
+                        final e = _entity!;
+                        if (widget.planService!.isInPlan(e.id)) return;
+                        widget.planService!.addToPlan(e.id,
+                            entityName: e.name,
+                            city: e.city,
+                            state: e.state,
+                            phone: e.phone,
+                            addressLine1: e.addressLine1);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Added to your plan!')));
+                        setState(() {});
+                      },
+                      icon: Icon(
+                          widget.planService?.isInPlan(widget.entityId) == true
+                              ? Icons.check
+                              : Icons.add_task,
+                          size: 18),
+                      label: Text(
+                          widget.planService?.isInPlan(widget.entityId) == true
+                              ? 'In Plan'
+                              : 'Add to Plan'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
 
           const SizedBox(height: 32),
@@ -558,148 +586,113 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildContactCard(Entity e) {
-    final hasContact = (e.phone != null && e.phone!.isNotEmpty) ||
-        (e.intakePhone != null && e.intakePhone!.isNotEmpty) ||
-        (e.website != null && e.website!.isNotEmpty);
-
-    if (!hasContact) return const SizedBox.shrink();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Contact',
-                style: TextStyle(
-                    fontFamily: 'InstrumentSerif',
-                    fontSize: 18,
-                    color: AppColors.text(context))),
-            const SizedBox(height: 12),
-            if (e.phone != null && e.phone!.isNotEmpty)
-              _contactRow(Icons.phone, 'Phone', e.phone!,
-                  onTap: () => _callPhone(e.phone!)),
-            if (e.intakePhone != null && e.intakePhone!.isNotEmpty)
-              _contactRow(Icons.phone_in_talk, 'Intake', e.intakePhone!,
-                  onTap: () => _callPhone(e.intakePhone!)),
-            if (e.website != null && e.website!.isNotEmpty)
-              _contactRow(Icons.language, 'Website', e.website!,
-                  onTap: () => _openWebsite(e.website!)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _contactRow(IconData icon, String label, String value,
-      {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: AppColors.accent(context)),
-            const SizedBox(width: 10),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: TextStyle(
-                        fontFamily: 'DMSans',
-                        fontSize: 12,
-                        color: AppColors.muted(context))),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontFamily: 'DMSans',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.accent(context),
-                  ),
-                ),
-              ],
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> children) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: TextStyle(
-                    fontFamily: 'InstrumentSerif',
-                    fontSize: 18,
-                    color: AppColors.text(context))),
-            const SizedBox(height: 10),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _hasDetailInfo(Entity e) {
-    return e.languages.isNotEmpty ||
-        e.paymentTypes.isNotEmpty ||
-        e.populationsServed.isNotEmpty ||
-        e.accessibility.isNotEmpty ||
-        e.ageGroups.isNotEmpty;
-  }
-
-  Widget _buildDetailsSection(Entity e) {
-    return _buildSection('Details', [
-      if (e.languages.isNotEmpty) _detailRow('Languages', e.languages.join(', ')),
-      if (e.paymentTypes.isNotEmpty)
-        _detailRow('Payment Types', e.paymentTypes.join(', ')),
-      if (e.populationsServed.isNotEmpty)
-        _detailRow('Populations Served', e.populationsServed.join(', ')),
-      if (e.ageGroups.isNotEmpty) _detailRow('Age Groups', e.ageGroups.join(', ')),
-      if (e.accessibility.isNotEmpty)
-        _detailRow('Accessibility', e.accessibility.join(', ')),
-    ]);
-  }
-
-  Widget _detailRow(String label, String value) {
+  Widget _sectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 10),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontFamily: 'DMSans',
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+          color: AppColors.muted(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.tagBgOf(context),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'DMSans',
+          fontSize: 13,
+          color: AppColors.text(context),
+        ),
+      ),
+    );
+  }
+
+  /// Contact info card matching the website layout: labeled rows for phone,
+  /// intake, address, website — each tappable.
+  Widget _buildContactInfoCard(Entity e) {
+    final hasAny = (e.phone != null && e.phone!.isNotEmpty) ||
+        (e.intakePhone != null && e.intakePhone!.isNotEmpty) ||
+        (e.fullAddress.isNotEmpty) ||
+        (e.website != null && e.website!.isNotEmpty);
+    if (!hasAny) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorderOf(context)),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DMSans',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.muted(context),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'DMSans',
-                fontSize: 13,
-                color: AppColors.text(context),
-              ),
-            ),
-          ),
+          if (e.phone != null && e.phone!.isNotEmpty)
+            _contactInfoRow('PHONE', e.phone!, onTap: () => _callPhone(e.phone!)),
+          if (e.intakePhone != null && e.intakePhone!.isNotEmpty)
+            _contactInfoRow('INTAKE LINE', e.intakePhone!,
+                onTap: () => _callPhone(e.intakePhone!)),
+          if (e.fullAddress.isNotEmpty)
+            _contactInfoRow('ADDRESS', e.fullAddress,
+                onTap: (e.lat != null && e.lng != null) ? _openDirections : null),
+          if (e.website != null && e.website!.isNotEmpty)
+            _contactInfoRow('WEBSITE', e.website!,
+                onTap: () => _openWebsite(e.website!), isUrl: true),
         ],
       ),
     );
   }
+
+  Widget _contactInfoRow(String label, String value,
+      {VoidCallback? onTap, bool isUrl = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'DMSans',
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+                color: AppColors.muted(context),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'DMSans',
+                fontSize: isUrl ? 14 : 16,
+                fontWeight: isUrl ? FontWeight.w400 : FontWeight.w600,
+                color: onTap != null
+                    ? AppColors.accent(context)
+                    : AppColors.text(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildDataQualityFooter(DataQuality dq) {
     return Container(
