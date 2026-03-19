@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../services/vault_service.dart';
 import '../theme.dart';
 import 'vault_screen.dart';
@@ -82,6 +84,17 @@ class _VaultPinScreenState extends State<VaultPinScreen>
       }
     });
     _detectMode();
+  }
+
+  Future<void> _requestStoragePermission() async {
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+    final status = await Permission.storage.request();
+    if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+    // Android 13+ granular media permissions
+    await Permission.photos.request();
+    await Permission.camera.request();
   }
 
   Future<void> _detectMode() async {
@@ -169,7 +182,10 @@ class _VaultPinScreenState extends State<VaultPinScreen>
       if (!mounted) return;
 
       if (success) {
+        // Request storage/media permissions for vault file uploads
+        await _requestStoragePermission();
         // Password accepted — move to PIN setup step
+        if (!mounted) return;
         setState(() {
           _passwordSubmitting = false;
           _passwordStepDone = true;
