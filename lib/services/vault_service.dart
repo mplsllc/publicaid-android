@@ -178,6 +178,102 @@ class VaultService {
     _currentPassword = password;
     _documents = [];
     await _uploadManifest();
+
+    // ── Self-test: verify the full round-trip works ──
+    await _runCreateSelfTest(pin, password);
+  }
+
+  /// Diagnostic self-test run after createVault to verify the entire
+  /// encrypt→upload→download→decrypt→unlock chain works.
+  Future<void> _runCreateSelfTest(String pin, String password) async {
+    final results = <String, String>{};
+    try {
+      // Step 1: Storage read-back
+      final s1Salt = await _storage.read(key: 'vault_salt');
+      final s1Hash = await _storage.read(key: 'vault_pin_hash');
+      final s1PinSalt = await _storage.read(key: 'vault_pin_salt');
+      final s1Pwd = await _storage.read(key: 'vault_password');
+      results['1_storage'] = (s1Salt != null && s1Hash != null && s1PinSalt != null && s1Pwd != null)
+          ? 'PASS (salt=${s1Salt!.length}ch hash=${s1Hash!.length}ch pinSalt=${s1PinSalt!.length}ch pwd=${s1Pwd!.length}ch)'
+          : 'FAIL missing: salt=${s1Salt != null} hash=${s1Hash != null} pinSalt=${s1PinSalt != null} pwd=${s1Pwd != null}';
+
+      // Step 2: PIN hash round-trip
+      final pinSalt = base64Decode(s1PinSalt!);
+      final recomputedHash = _hashPin(pin, pinSalt);
+      results['2_pin_hash'] = (recomputedHash == s1Hash)
+          ? 'PASS'
+          : 'FAIL (computed=$recomputedHash stored=$s1Hash)';
+
+      // Step 3: Password exact match
+      results['3_password'] = (s1Pwd == password)
+          ? 'PASS'
+          : 'FAIL (stored len=${s1Pwd?.length} original len=${password.length})';
+
+      // Step 4: Key derivation determinism
+      final vaultSalt = base64Decode(s1Salt!);
+      final reDerived = _deriveKey(s1Pwd!, vaultSalt);
+      final keysMatch = reDerived.length == _encryptionKey!.length &&
+          reDerived.every((b) => b == _encryptionKey![reDerived.indexOf(b)]);
+      results['4_key_deriv'] = keysMatch
+          ? 'PASS'
+          : 'FAIL (len ${reDerived.length} vs ${_encryptionKey!.length})';
+
+      // Step 5: Download manifest bytes
+      final downloaded = await _downloadManifest();
+      if (downloaded == null || downloaded.isEmpty) {
+        results['5_download'] = 'FAIL (null or empty)';
+      } else {
+        results['5_download'] = 'PASS (${downloaded.length} bytes, head=${_hexSnippet(downloaded)})';
+      }
+
+      // Step 6+7: Decrypt + parse
+      if (downloaded != null && downloaded.isNotEmpty) {
+        try {
+          // v2 format: strip salt prefix
+          final encData = downloaded.sublist(_saltLength);
+          final decrypted = _decrypt(encData);
+          results['6_decrypt'] = 'PASS (${decrypted.length} bytes)';
+
+          final parsed = json.decode(utf8.decode(decrypted)) as Map<String, dynamic>;
+          results['7_parse'] = parsed.containsKey('documents')
+              ? 'PASS (documents key present)'
+              : 'FAIL (no documents key, keys: ${parsed.keys})';
+        } catch (e) {
+          results['6_decrypt'] = 'FAIL ($e)';
+          results['7_parse'] = 'SKIPPED';
+        }
+      }
+
+      // Step 8: Real lockVault → unlockWithPin
+      lockVault();
+      final realUnlock = await unlockWithPin(pin);
+      results['8_real_unlock'] = realUnlock
+          ? 'PASS'
+          : 'FAIL (unlockWithPin returned false)';
+
+      // If step 8 failed, re-unlock so the vault is usable
+      if (!realUnlock) {
+        _encryptionKey = _deriveKey(password, vaultSalt);
+        _currentPassword = password;
+        _documents = [];
+      }
+    } catch (e) {
+      results['error'] = e.toString();
+    }
+
+    // Print all results
+    print('═══ VAULT SELF-TEST ═══');
+    for (final entry in results.entries) {
+      print('  ${entry.key}: ${entry.value}');
+    }
+    print('═══════════════════════');
+  }
+
+  String _hexSnippet(Uint8List bytes, {int n = 12}) {
+    if (bytes.isEmpty) return 'empty';
+    final head = bytes.sublist(0, bytes.length.clamp(0, n))
+        .map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return '$head... (${bytes.length}B)';
   }
 
   /// Unlock the vault with a 6-digit PIN (daily use).
@@ -188,24 +284,16 @@ class VaultService {
     final password = await _storage.read(key: 'vault_password');
     final vaultSaltB64 = await _storage.read(key: 'vault_salt');
 
-    print('VAULT UNLOCK: hash=${storedHash != null} salt=${pinSaltB64 != null} pwd=${password != null} vsalt=${vaultSaltB64 != null}');
-
     if (storedHash == null ||
         pinSaltB64 == null ||
         password == null ||
         vaultSaltB64 == null) {
-      print('VAULT UNLOCK: MISSING KEYS');
       return false;
     }
 
     final pinSalt = base64Decode(pinSaltB64);
     final pinHash = _hashPin(pin, pinSalt);
-    if (pinHash != storedHash) {
-      print('VAULT UNLOCK: PIN HASH MISMATCH');
-      return false;
-    }
-
-    print('VAULT UNLOCK: PIN OK, deriving key...');
+    if (pinHash != storedHash) return false;
 
     // PIN verified — derive the real AES encryption key from the password
     final vaultSalt = base64Decode(vaultSaltB64);
@@ -214,9 +302,7 @@ class VaultService {
 
     try {
       await _downloadAndDecryptManifest(vaultSaltB64);
-      print('VAULT UNLOCK: SUCCESS');
     } catch (e) {
-      print('VAULT UNLOCK: MANIFEST FAILED: $e');
       _encryptionKey = null;
       _currentPassword = null;
       return false;
@@ -708,11 +794,11 @@ class VaultService {
       );
 
     final output = Uint8List(cipher.getOutputSize(plaintext.length));
-    final len = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
-    cipher.doFinal(output, len);
+    var offset = cipher.processBytes(plaintext, 0, plaintext.length, output, 0);
+    offset += cipher.doFinal(output, offset);
 
     // Format: IV (12) + ciphertext + GCM tag (16)
-    return Uint8List.fromList([...iv, ...output]);
+    return Uint8List.fromList([...iv, ...output.sublist(0, offset)]);
   }
 
   Uint8List _decrypt(Uint8List data) {
