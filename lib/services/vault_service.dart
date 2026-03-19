@@ -223,6 +223,7 @@ class VaultService {
         pinSaltB64 == null ||
         encPwdB64 == null ||
         vaultSaltB64 == null) {
+      print('Vault PIN: missing keys — hash:${storedHash != null} pinSalt:${pinSaltB64 != null} encPwd:${encPwdB64 != null} vaultSalt:${vaultSaltB64 != null}');
       return false;
     }
 
