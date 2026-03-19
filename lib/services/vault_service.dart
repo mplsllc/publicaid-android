@@ -63,12 +63,17 @@ class VaultService {
       'vault_pin_hash',
       'vault_pin_salt',
       'vault_salt',
+      'vault_encrypted_password',
+      'vault_manifest_v2',
       'vault_bio_password',
       'vault_biometric_enabled',
     ]) {
       await _storage.delete(key: key);
     }
     _encryptionKey = null;
+    _currentPassword = null;
+    _temporaryPassword = null;
+    _documents = null;
   }
 
   // ---------------------------------------------------------------------------
