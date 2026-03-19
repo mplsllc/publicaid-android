@@ -86,7 +86,6 @@ class _VaultPinScreenState extends State<VaultPinScreen>
 
   Future<void> _detectMode() async {
     final hasLocal = await widget.vaultService.hasVault();
-    print('Vault detect: hasLocal=$hasLocal, isAuth=${widget.vaultService.isAuthenticated}');
     if (hasLocal) {
       final bioEnabled = await widget.vaultService.isBiometricEnabled();
       final hasCodes = await widget.vaultService.hasBackupCodes();
@@ -229,7 +228,6 @@ class _VaultPinScreenState extends State<VaultPinScreen>
 
   Future<void> _onPinComplete() async {
     HapticFeedback.lightImpact();
-    print('Vault PIN complete: mode=$_mode, isConfirming=$_isConfirming, pin length=${_pin.length}');
 
     if (_mode == _VaultMode.pinUnlock) {
       // Daily unlock

@@ -56,6 +56,7 @@ class VaultService {
   Future<bool> hasSalt() async =>
       (await _storage.read(key: 'vault_salt')) != null;
 
+
   /// Clear all local vault data from secure storage.
   /// Called on logout so a different user doesn't inherit stale vault keys.
   Future<void> clearLocal() async {
@@ -178,7 +179,6 @@ class VaultService {
   /// Create a new vault with a strong password (encrypts files on server)
   /// and a 6-digit PIN (protects the password on device).
   Future<void> createVault(String password, String pin) async {
-    print('Vault createVault called, password length=${password.length}, pin length=${pin.length}');
     // Salt for password → AES key derivation
     final vaultSalt = _randomBytes(_saltLength);
     await _storage.write(key: 'vault_salt', value: base64Encode(vaultSalt));
@@ -208,24 +208,11 @@ class VaultService {
     _encryptionKey = _deriveKey(password, vaultSalt);
     _documents = [];
     await _uploadManifest();
-
-    // Verify the PIN can immediately decrypt the password
-    final verifyPinSalt = base64Decode((await _storage.read(key: 'vault_pin_salt'))!);
-    final verifyPinKey = _derivePinKey(pin, verifyPinSalt);
-    final verifyEncPwd = base64Decode((await _storage.read(key: 'vault_encrypted_password'))!);
-    try {
-      final verifyBytes = _decryptWithKey(verifyEncPwd, verifyPinKey);
-      final verifyPwd = utf8.decode(verifyBytes);
-      print('Vault createVault: verify OK, decrypted password matches=${verifyPwd == password}');
-    } catch (e) {
-      print('Vault createVault: VERIFY FAILED — $e');
-    }
   }
 
   /// Unlock the vault with a 6-digit PIN (daily use).
   /// PIN → verify → decrypt password → derive AES key → download manifest.
   Future<bool> unlockWithPin(String pin) async {
-    print('Vault unlockWithPin called, pin length=${pin.length}');
     final storedHash = await _storage.read(key: 'vault_pin_hash');
     final pinSaltB64 = await _storage.read(key: 'vault_pin_salt');
     final encPwdB64 = await _storage.read(key: 'vault_encrypted_password');
@@ -235,16 +222,12 @@ class VaultService {
         pinSaltB64 == null ||
         encPwdB64 == null ||
         vaultSaltB64 == null) {
-      print('Vault PIN: missing keys — hash:${storedHash != null} pinSalt:${pinSaltB64 != null} encPwd:${encPwdB64 != null} vaultSalt:${vaultSaltB64 != null}');
       return false;
     }
 
     final pinSalt = base64Decode(pinSaltB64);
     final pinHash = _hashPin(pin, pinSalt);
-    if (pinHash != storedHash) {
-      print('Vault PIN: hash mismatch');
-      return false;
-    }
+    if (pinHash != storedHash) return false;
 
     // Derive PIN key and decrypt the password
     final pinKey = _derivePinKey(pin, pinSalt);
@@ -252,9 +235,7 @@ class VaultService {
     try {
       final decryptedBytes = _decryptWithKey(base64Decode(encPwdB64), pinKey);
       password = utf8.decode(decryptedBytes);
-      print('Vault PIN: password decrypted OK, length=${password.length}');
-    } catch (e) {
-      print('Vault PIN: password decrypt failed: $e');
+    } catch (_) {
       return false;
     }
 
@@ -266,7 +247,7 @@ class VaultService {
     try {
       await _downloadAndDecryptManifest(vaultSaltB64);
     } catch (e) {
-      print('Vault PIN unlock: manifest decrypt failed: $e');
+      // Manifest decrypt failed — treat as wrong credentials
       _encryptionKey = null;
       _currentPassword = null;
       return false;
@@ -797,9 +778,9 @@ class VaultService {
     final output = Uint8List(cipher.getOutputSize(ciphertextWithTag.length));
     final len = cipher.processBytes(
         ciphertextWithTag, 0, ciphertextWithTag.length, output, 0);
-    cipher.doFinal(output, len);
+    final finalLen = cipher.doFinal(output, len);
 
-    return output.sublist(0, output.length - _tagLength);
+    return output.sublist(0, len + finalLen);
   }
 
   /// Encrypt arbitrary data with a given key (used for PIN-key encryption).
@@ -846,9 +827,9 @@ class VaultService {
     final output = Uint8List(cipher.getOutputSize(ciphertextWithTag.length));
     final len = cipher.processBytes(
         ciphertextWithTag, 0, ciphertextWithTag.length, output, 0);
-    cipher.doFinal(output, len);
+    final finalLen = cipher.doFinal(output, len);
 
-    return output.sublist(0, output.length - _tagLength);
+    return output.sublist(0, len + finalLen);
   }
 
   /// Download the remote manifest and decrypt it into [_documents].
