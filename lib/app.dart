@@ -156,6 +156,7 @@ class _PublicaidAppState extends State<PublicaidApp> {
 
     if (_authService.token == null) {
       _vaultSetupOffered = false; // reset so it shows again after re-login
+      await _vaultService.clearLocal(); // wipe stale vault keys for next user
       return;
     }
 

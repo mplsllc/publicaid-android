@@ -56,6 +56,21 @@ class VaultService {
   Future<bool> hasSalt() async =>
       (await _storage.read(key: 'vault_salt')) != null;
 
+  /// Clear all local vault data from secure storage.
+  /// Called on logout so a different user doesn't inherit stale vault keys.
+  Future<void> clearLocal() async {
+    for (final key in [
+      'vault_pin_hash',
+      'vault_pin_salt',
+      'vault_salt',
+      'vault_bio_password',
+      'vault_biometric_enabled',
+    ]) {
+      await _storage.delete(key: key);
+    }
+    _encryptionKey = null;
+  }
+
   // ---------------------------------------------------------------------------
   // Backup codes
   // ---------------------------------------------------------------------------
