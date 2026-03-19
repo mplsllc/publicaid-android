@@ -188,16 +188,24 @@ class VaultService {
     final password = await _storage.read(key: 'vault_password');
     final vaultSaltB64 = await _storage.read(key: 'vault_salt');
 
+    print('VAULT UNLOCK: hash=${storedHash != null} salt=${pinSaltB64 != null} pwd=${password != null} vsalt=${vaultSaltB64 != null}');
+
     if (storedHash == null ||
         pinSaltB64 == null ||
         password == null ||
         vaultSaltB64 == null) {
+      print('VAULT UNLOCK: MISSING KEYS');
       return false;
     }
 
     final pinSalt = base64Decode(pinSaltB64);
     final pinHash = _hashPin(pin, pinSalt);
-    if (pinHash != storedHash) return false;
+    if (pinHash != storedHash) {
+      print('VAULT UNLOCK: PIN HASH MISMATCH');
+      return false;
+    }
+
+    print('VAULT UNLOCK: PIN OK, deriving key...');
 
     // PIN verified — derive the real AES encryption key from the password
     final vaultSalt = base64Decode(vaultSaltB64);
@@ -206,7 +214,9 @@ class VaultService {
 
     try {
       await _downloadAndDecryptManifest(vaultSaltB64);
+      print('VAULT UNLOCK: SUCCESS');
     } catch (e) {
+      print('VAULT UNLOCK: MANIFEST FAILED: $e');
       _encryptionKey = null;
       _currentPassword = null;
       return false;
