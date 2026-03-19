@@ -41,9 +41,11 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
+    // Only lock on detached (app killed), not paused (file picker, share sheet,
+    // or brief background). Locking on pause breaks file imports and any
+    // activity that briefly backgrounds the app.
+    if (state == AppLifecycleState.detached) {
       widget.vaultService.lockVault();
-      if (mounted) Navigator.pop(context);
     }
   }
 
@@ -447,7 +449,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
 
   Widget _buildUsageBar() {
     final used = _usage?['used'] as int? ?? 0;
-    final limit = _usage?['limit'] as int? ?? (1024 * 1024 * 1024); // 1 GB
+    final limit = _usage?['limit'] as int? ?? (100 * 1024 * 1024); // 100 MB
     final fraction = limit > 0 ? (used / limit).clamp(0.0, 1.0) : 0.0;
 
     return Container(
@@ -464,7 +466,7 @@ class _VaultScreenState extends State<VaultScreen> with WidgetsBindingObserver {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Using ${_formatBytes(used)} of 1 GB',
+                'Using ${_formatBytes(used)} of 100 MB',
                 style: TextStyle(
                   fontFamily: 'DMSans',
                   fontSize: 12,
