@@ -214,6 +214,7 @@ class VaultService {
   /// Unlock the vault with a 6-digit PIN (daily use).
   /// PIN → verify → decrypt password → derive AES key → download manifest.
   Future<bool> unlockWithPin(String pin) async {
+    print('Vault unlockWithPin called, pin length=${pin.length}');
     final storedHash = await _storage.read(key: 'vault_pin_hash');
     final pinSaltB64 = await _storage.read(key: 'vault_pin_salt');
     final encPwdB64 = await _storage.read(key: 'vault_encrypted_password');
