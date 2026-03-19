@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/vault_service.dart';
 import '../theme.dart';
@@ -73,12 +74,27 @@ class _VaultSetupScreenState extends State<VaultSetupScreen>
     super.dispose();
   }
 
-  void _advance() {
+  void _advance() async {
+    // Request storage permission on the first step (welcome → password)
+    if (_step == 0) {
+      await _requestStoragePermission();
+    }
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
     setState(() => _step++);
+  }
+
+  Future<void> _requestStoragePermission() async {
+    // Request storage/media permissions so file uploads work.
+    // permission_handler handles the Android version differences internally.
+    final status = await Permission.storage.request();
+    if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+    // Also request photos for Android 13+ (no-op on older versions)
+    await Permission.photos.request();
   }
 
   void _validatePassword() {
