@@ -175,6 +175,7 @@ class VaultService {
 
     // Derive the real AES encryption key from the password
     _encryptionKey = _deriveKey(password, vaultSalt);
+    _currentPassword = password;
     _documents = [];
     await _uploadManifest();
   }
